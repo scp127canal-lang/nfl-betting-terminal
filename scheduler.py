@@ -29,11 +29,14 @@ from data_pipeline import get_current_nfl_week, load_schedules
 
 logger = logging.getLogger(__name__)
 
-SNAPSHOT_DIR = Path(__file__).parent / "cache" / "odds"
+SNAPSHOT_DIR = Path(__file__).parent / "cache" / "odds"          # descarga local (FastAPI 8 AM)
+REPO_SNAPSHOT_DIR = Path(__file__).parent / "snapshots"           # GitHub Actions (antes de cada jornada)
+SNAPSHOT_MAX_AGE = dt.timedelta(hours=14)  # más viejo que esto: se ignora y se usa la API en vivo
 JOB_ID = "morning_odds_refresh"
 
 _lock = threading.RLock()
 _snapshot: dict = {"game_odds": None, "player_props": None, "meta": None}
+_loaded_sig: tuple | None = None
 _listeners: list[Callable[[dict], None]] = []
 _scheduler: BackgroundScheduler | None = None
 
@@ -90,11 +93,35 @@ def _save_snapshot(game_odds: pd.DataFrame, props: pd.DataFrame, meta: dict) -> 
     (SNAPSHOT_DIR / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
 
+def _disk_signature() -> tuple:
+    """mtime de cada meta.json: si cambia (nuevo commit de Actions), se recarga."""
+    sig = []
+    for d in (SNAPSHOT_DIR, REPO_SNAPSHOT_DIR):
+        try:
+            sig.append((str(d), (d / "meta.json").stat().st_mtime))
+        except OSError:
+            sig.append((str(d), None))
+    return tuple(sig)
+
+
 def load_snapshot_from_disk() -> bool:
+    """Carga el snapshot más reciente entre cache/odds (local) y snapshots/ (Actions)."""
+    global _loaded_sig
+    best = None
+    for d in (SNAPSHOT_DIR, REPO_SNAPSHOT_DIR):
+        try:
+            meta = json.loads((d / "meta.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if best is None or meta.get("refreshed_at", "") > best[1].get("refreshed_at", ""):
+            best = (d, meta)
+    _loaded_sig = _disk_signature()
+    if best is None:
+        return False
+    d, meta = best
     try:
-        meta = json.loads((SNAPSHOT_DIR / "meta.json").read_text(encoding="utf-8"))
-        game_odds = pd.read_parquet(SNAPSHOT_DIR / "game_odds.parquet")
-        props = pd.read_parquet(SNAPSHOT_DIR / "player_props.parquet")
+        game_odds = pd.read_parquet(d / "game_odds.parquet")
+        props = pd.read_parquet(d / "player_props.parquet")
     except (OSError, ValueError):
         return False
     with _lock:
@@ -102,11 +129,25 @@ def load_snapshot_from_disk() -> bool:
     return True
 
 
+def _is_fresh(meta: dict | None) -> bool:
+    try:
+        ts = dt.datetime.fromisoformat(meta["refreshed_at"])
+    except (TypeError, KeyError, ValueError):
+        return False
+    return dt.datetime.now(dt.timezone.utc) - ts <= SNAPSHOT_MAX_AGE
+
+
 def get_snapshot() -> dict:
-    """Última descarga: {"game_odds": DataFrame|None, "player_props": DataFrame|None, "meta": dict|None}."""
+    """Última descarga vigente: {"game_odds", "player_props", "meta"} (None si no hay o caducó).
+
+    Se recarga sola cuando cambia un meta.json en disco; un snapshot de más de
+    SNAPSHOT_MAX_AGE se ignora para que la app use la API en vivo.
+    """
     with _lock:
-        if _snapshot["meta"] is None:
+        if _snapshot["meta"] is None or _disk_signature() != _loaded_sig:
             load_snapshot_from_disk()
+        if not _is_fresh(_snapshot["meta"]):
+            return {"game_odds": None, "player_props": None, "meta": None}
         return dict(_snapshot)
 
 

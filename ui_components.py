@@ -168,7 +168,16 @@ def snapshot_key() -> str:
 def odds_status() -> str:
     meta = scheduler.get_snapshot().get("meta")
     if meta:
-        return f"Snapshot The-Odds-API · {meta['refreshed_at']}"
+        try:
+            from zoneinfo import ZoneInfo
+            import datetime as _dt
+            ts = _dt.datetime.fromisoformat(meta["refreshed_at"]).astimezone(ZoneInfo("America/New_York"))
+            when = ts.strftime("%d/%m %H:%M ET")
+        except (KeyError, ValueError):
+            when = meta.get("refreshed_at", "")
+        slot = meta.get("slot")
+        slot_txt = f" · jornada {slot[-5:]} ET" if slot and slot != "manual" else ""
+        return f"Cuotas actualizadas {when}{slot_txt}"
     if ODDS_API_ENABLED:
         return "The-Odds-API en vivo · caché 30 min"
     return "Vegas nflverse · sin props en vivo"

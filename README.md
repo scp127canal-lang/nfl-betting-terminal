@@ -130,6 +130,22 @@ La API cobra **1 crédito por mercado y región**:
 
 ---
 
+## Actualización automática (GitHub Actions)
+
+El workflow `.github/workflows/odds-refresh.yml` actualiza las cuotas **~1 hora antes de cada jornada**, es decir, de cada bloque de kickoffs del día (ej. domingo 13:00 · 16:05/16:25 · 20:20 ET):
+
+1. Corre cada 15 min en horario de partidos y lee el calendario de nflverse (gratis).
+2. Si una jornada empieza en ~1 h y aún no se actualizó, ejecuta `refresh_snapshot.py`. Este descarga las líneas de partido y los props de todos los partidos de hoy que aún no empezaron.
+3. Guarda el resultado en `snapshots/` y hace commit. Streamlit Cloud se actualiza sola y los visitantes no gastan créditos.
+
+**Configuración:** GitHub → *Settings → Secrets and variables → Actions → New repository secret* → `ODDS_API_KEY`.
+**Manual:** pestaña *Actions → Actualizar cuotas antes de cada jornada → Run workflow* (casilla *force* para descargar ya).
+**Local:** `python refresh_snapshot.py --dry-run` muestra las jornadas de hoy y lo que haría.
+
+Coste aproximado con el catálogo completo: domingo ~320 créditos (3 jornadas), jueves y lunes ~20 cada uno, ~1,500–2,000 al mes.
+
+> Como el bot hace commits, antes de subir cambios propios ejecuta `git pull`.
+
 ## Despliegue
 
 La interfaz Streamlit funciona sin la API, así que se puede publicar en **Streamlit Community Cloud** con `app.py` como archivo principal y **Python 3.11**. Las claves van en *Secrets* (formato TOML), no en el repositorio:
