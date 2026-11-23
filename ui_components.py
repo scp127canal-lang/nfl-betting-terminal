@@ -10,6 +10,7 @@ REGLA: toda cuota se muestra como número decimal puro (1.91), sin 'x' ni sufijo
 
 from __future__ import annotations
 
+import hmac
 import html
 import math
 
@@ -465,6 +466,29 @@ def slate_props_live(event_map: dict, fetch_missing: bool = False) -> tuple[pd.D
     return props, missing
 
 
+def require_password() -> None:
+    """Pantalla de acceso. Solo se activa si APP_PASSWORD está definido (Secrets / .env).
+    Protege tus créditos de The-Odds-API cuando la app es pública."""
+    from config import APP_PASSWORD
+    if not APP_PASSWORD or st.session_state.get("auth_ok"):
+        return
+    _, mid, _ = st.columns([1, 1.2, 1])
+    with mid, st.container(key="loginbox"):
+        st.markdown('<div style="text-align:center;font-size:2.4rem">🏈</div>'
+                    '<div style="text-align:center;font-weight:800;font-size:1.35rem">NFL +EV Terminal</div>'
+                    '<div class="muted" style="text-align:center;margin-bottom:10px">Acceso privado</div>',
+                    unsafe_allow_html=True)
+        with st.form("login", border=False):
+            pwd = st.text_input("Contraseña", type="password", placeholder="Contraseña de acceso")
+            ok = st.form_submit_button("Entrar", type="primary", width="stretch")
+        if ok:
+            if hmac.compare_digest(pwd.encode(), APP_PASSWORD.encode()):
+                st.session_state["auth_ok"] = True
+                st.rerun()
+            st.error("Contraseña incorrecta.")
+    st.stop()
+
+
 def pool_note(player_pool: list, team_pool: list, props: pd.DataFrame) -> str:
     """Leyenda del pool de las combinadas sugeridas (solo líneas principales fijas)."""
     n_props = len({l.unique_key for l in player_pool})
@@ -887,6 +911,7 @@ div[class*="st-key-slipleg_"] [data-testid="stColumn"]:last-child button:hover {
 .st-key-slipmetrics [data-testid="stMetricDelta"] {{ font-size: .7rem !important; }}
 .st-key-slipmetrics .slipbadges {{ margin-top: 8px; }}
 .st-key-slipclear button {{ border-radius: 8px !important; }}
+.st-key-loginbox {{ {GLASS} padding: 24px 22px; margin-top: 12vh; border-radius: 16px; }}
 </style>""", unsafe_allow_html=True)
 
 

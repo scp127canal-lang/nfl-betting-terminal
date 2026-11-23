@@ -83,6 +83,7 @@ THE_ODDS_API_KEY=tu_odds_api_key_aqui   # https://the-odds-api.com (también se 
 MORNING_REFRESH_HOUR=8                  # hora de la descarga diaria (hora local)
 GEMINI_MODEL=gemini-3.8-flash
 # ODDS_PLAYER_MARKETS=core              # opcional: menos mercados para gastar menos créditos
+# APP_PASSWORD=...                      # opcional: pide contraseña al abrir la app
 ```
 
 `.env` está en `.gitignore`: **nunca subas tus claves al repositorio.**
@@ -131,11 +132,17 @@ La API cobra **1 crédito por mercado y región**:
 
 ## Despliegue
 
-La interfaz Streamlit funciona sin la API, así que se puede publicar en **Streamlit Community Cloud** con `app.py` como archivo principal. Las claves van en *Secrets*, no en el repositorio.
+La interfaz Streamlit funciona sin la API, así que se puede publicar en **Streamlit Community Cloud** con `app.py` como archivo principal y **Python 3.11**. Las claves van en *Secrets* (formato TOML), no en el repositorio:
+
+```toml
+GEMINI_API_KEY = "..."
+ODDS_API_KEY = "..."
+APP_PASSWORD = "una-contraseña-para-compartir"   # activa la pantalla de acceso
+```
 
 Lo que vive en FastAPI (la descarga diaria de las 8 AM, el chat `/chat` y los demás endpoints) necesita un servicio que mantenga procesos corriendo, como Render o Railway, usando `run.py`.
 
-⚠️ Si la app es pública, cualquier visitante puede gastar tus créditos de The-Odds-API. Protégela con contraseña antes de publicarla.
+⚠️ Si la app es pública, cualquier visitante puede gastar tus créditos de The-Odds-API. Define `APP_PASSWORD` para que pida contraseña al entrar; sin esa variable la app abre directamente, como en local.
 
 ---
 

@@ -17,6 +17,7 @@ import ui_components as ui
 st.set_page_config(page_title="NFL +EV Terminal", page_icon="🏈", layout="wide",
                    initial_sidebar_state="expanded")
 ui.inject_css()
+ui.require_password()   # solo si APP_PASSWORD está en Secrets / .env
 # Boleta: ancho mínimo garantizado desde el primer render (solo cuando está abierta,
 # para que el botón de colapsar siga funcionando).
 st.markdown("""<style>

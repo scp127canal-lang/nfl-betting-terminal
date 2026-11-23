@@ -6,11 +6,27 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- Variables de entorno ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-THE_ODDS_API_KEY = os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY", "")
-MORNING_REFRESH_HOUR = int(os.getenv("MORNING_REFRESH_HOUR", "8"))
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+
+def setting(name: str, default: str = "") -> str:
+    """Lee una variable: primero el entorno / .env (local), luego st.secrets
+    (Streamlit Community Cloud). Nunca falla si no hay secrets.toml."""
+    value = os.getenv(name)
+    if value:
+        return value
+    try:
+        import streamlit as st
+        value = st.secrets.get(name)
+    except Exception:
+        value = None
+    return str(value) if value not in (None, "") else default
+
+
+# --- Variables de entorno / Secrets ---
+GEMINI_API_KEY = setting("GEMINI_API_KEY")
+THE_ODDS_API_KEY = setting("THE_ODDS_API_KEY") or setting("ODDS_API_KEY")
+MORNING_REFRESH_HOUR = int(setting("MORNING_REFRESH_HOUR", "8"))
+GEMINI_MODEL = setting("GEMINI_MODEL", "gemini-3.8-flash")
+APP_PASSWORD = setting("APP_PASSWORD")   # si se define, la app pide contraseña al entrar
 NFL_TIMEZONE = "America/New_York"  # las fechas de partido de la NFL van en hora del Este
 
 # --- Estilo Dark Mode (Streamlit) ---
