@@ -26,9 +26,15 @@ from scipy.stats import norm
 from data_pipeline import TEAM_ABBR, get_player_game_log, normalize_name, team_points_log  # noqa: F401
 from odds_pipeline import MARKET_STAT_MAP, is_main_market, main_lines
 from prediction_engine import (
-    N_SIMULATIONS, REALISM_GAMES, expected_value_pct, implied_probability,
+    MAX_CREDIBLE_EV, MIN_EDGE_PCT, MODEL_WEIGHT, MODEL_WEIGHT_TEAM, N_SIMULATIONS, REALISM_GAMES, blend_prob,
+    expected_value_pct, implied_probability, market_probs, model_weight,
     simulate_game_points, simulate_stat, validate_prop_realism,
 )
+
+# La correlación simulada entre patas (lift = p_conjunta / producto de marginales)
+# se conserva solo en parte: lift_ajustado = lift ** LIFT_WEIGHT. Conservador para SGP.
+LIFT_WEIGHT = 0.5
+MAX_CREDIBLE_PARLAY_EV = 100.0   # combinadas con EV mayor se descartan (casi siempre error del modelo)
 
 # --------------------------------------------------------------------------- #
 # Niveles de riesgo
@@ -111,6 +117,8 @@ class Leg:
     stat: str | None = None
     history: np.ndarray = field(default_factory=lambda: np.array([]), repr=False)
     realism: dict | None = field(default=None, repr=False)
+    market_prob: float | None = None   # prob. sin vig del mercado (0-1)
+    weight: float = MODEL_WEIGHT       # peso del Monte Carlo en la mezcla
 
     def hits(self, values: np.ndarray) -> np.ndarray:
         if self.market == "h2h":
@@ -120,8 +128,17 @@ class Leg:
         return values > self.line if self.side == "over" else values < self.line
 
     @cached_property
-    def prob(self) -> float:
+    def model_prob(self) -> float:
+        """Monte Carlo puro."""
         return float(self.hits(self.sims).mean())
+
+    @cached_property
+    def prob(self) -> float:
+        """Probabilidad AJUSTADA (Monte Carlo + mercado sin vig): la que decide el EV."""
+        mkt = self.market_prob
+        if mkt is None or (isinstance(mkt, float) and math.isnan(mkt)):
+            mkt = 1 / self.decimal_odds / 1.045 if self.decimal_odds > 1 else None
+        return blend_prob(self.model_prob, mkt, self.weight)
 
     @property
     def ev_pct(self) -> float:
@@ -154,7 +171,9 @@ class Leg:
     def to_dict(self) -> dict:
         return {"label": self.label, "market": self.market, "line": self.line,
                 "decimal_odds": self.decimal_odds, "prob_pct": round(self.prob * 100, 2),
-                "ev_pct": self.ev_pct,
+                "mc_prob_pct": round(self.model_prob * 100, 2),
+                "ev_pct": self.ev_pct, "kind": self.kind, "side": self.side, "player": self.player,
+                "team": self.team, "stat": self.stat, "event_id": self.event_id,
                 "trend_hit_rate_pct": None if math.isnan(self.trend_hit_rate)
                 else round(self.trend_hit_rate * 100, 1)}
 
@@ -175,7 +194,13 @@ def build_player_legs(props: pd.DataFrame, weekly: pd.DataFrame,
         props = main_lines(props)
     rows = props[props["market"].isin(MARKET_STAT_MAP) & props["player"].notna()
                  & props["outcome"].isin(["Over", "Under"])
-                 & props["line"].notna() & props["decimal_odds"].notna()]
+                 & props["line"].notna() & props["decimal_odds"].notna()].copy()
+    # Prob. sin vig del mercado: la que venga dada (ej. desde la escalera de la UI) o calculada
+    computed = market_probs(rows, ["event_id", "player", "market", "line"]) if not rows.empty else None
+    if "market_prob" in rows.columns and computed is not None:
+        rows["market_prob"] = rows["market_prob"].fillna(computed)
+    elif computed is not None:
+        rows["market_prob"] = computed
     cache: dict[tuple, tuple] = {}
     legs = []
     for row in rows.itertuples(index=False):
@@ -205,7 +230,9 @@ def build_player_legs(props: pd.DataFrame, weekly: pd.DataFrame,
             label=label,
             kind="player", market=row.market, side=side, line=float(row.line),
             decimal_odds=float(row.decimal_odds), sims=sims, event_id=row.event_id,
-            player=row.player, team=team, stat=stat, history=values, realism=guard))
+            player=row.player, team=team, stat=stat, history=values, realism=guard,
+            market_prob=None if pd.isna(row.market_prob) else float(row.market_prob),
+            weight=model_weight(len(values))))
     return legs
 
 
@@ -215,7 +242,14 @@ def build_team_legs(game_odds: pd.DataFrame, schedules: pd.DataFrame,
     """Patas de moneyline, spread y total a partir de la simulación de puntos."""
     legs = []
     rows = game_odds[game_odds["market"].isin(["h2h", "spreads", "totals"])
-                     & game_odds["decimal_odds"].notna()]
+                     & game_odds["decimal_odds"].notna()].copy()
+    if rows.empty:
+        return legs
+    # Grupo de mercado: ML (local vs visita) · spread (±línea) · total (Over/Under de la línea)
+    rows["_k"] = np.where(rows["market"] == "spreads", rows["line"].abs(),
+                          np.where(rows["market"] == "totals", rows["line"], 0.0))
+    if "market_prob" not in rows.columns:
+        rows["market_prob"] = market_probs(rows, ["event_id", "market", "_k"])
     for i, (event_id, g) in enumerate(rows.groupby("event_id")):
         home_name, away_name = g["home_team"].iloc[0], g["away_team"].iloc[0]
         home, away = TEAM_ABBR.get(home_name), TEAM_ABBR.get(away_name)
@@ -240,7 +274,9 @@ def build_team_legs(game_odds: pd.DataFrame, schedules: pd.DataFrame,
                     label=f"Total {away}@{home} {row.outcome} {row.line:g}", kind="team",
                     market="totals", side=row.outcome.lower(), line=float(row.line),
                     decimal_odds=float(row.decimal_odds), sims=sim["total"],
-                    event_id=event_id, history=total_hist))
+                    event_id=event_id, history=total_hist,
+                    market_prob=None if pd.isna(row.market_prob) else float(row.market_prob),
+                    weight=MODEL_WEIGHT_TEAM))
                 continue
             team = TEAM_ABBR.get(row.outcome)
             if team not in (home, away):
@@ -255,7 +291,9 @@ def build_team_legs(game_odds: pd.DataFrame, schedules: pd.DataFrame,
             legs.append(Leg(
                 label=label, kind="team", market=row.market, side=team, line=line,
                 decimal_odds=float(row.decimal_odds), sims=margin, event_id=event_id,
-                team=team, history=margin_hist[team]))
+                team=team, history=margin_hist[team],
+                market_prob=None if pd.isna(row.market_prob) else float(row.market_prob),
+                weight=MODEL_WEIGHT_TEAM))
     return legs
 
 
@@ -455,7 +493,7 @@ def reprice_parlay(joint_probability: float, adjusted_odds: float, stake: float 
         "joint_prob_pct": round(p * 100, 2),
         "implied_prob_pct": implied_probability(adjusted_odds),
         "ev_pct": ev,
-        "is_plus_ev": ev > 0,
+        "is_plus_ev": ev >= MIN_EDGE_PCT,
         "stake": round(stake, 2),
         "payout": round(payout, 2),
         "net_profit": round(payout - stake, 2),
@@ -471,6 +509,19 @@ def reprice_parlay(joint_probability: float, adjusted_odds: float, stake: float 
 # --------------------------------------------------------------------------- #
 # Combinadas
 # --------------------------------------------------------------------------- #
+def adjusted_joint(model_joint: float, model_marginals, adjusted_marginals) -> tuple[float, float]:
+    """Probabilidad conjunta AJUSTADA de una combinada.
+
+    p = Π p_ajustada_i × lift^LIFT_WEIGHT, con lift = p_conjunta_MC / Π p_MC_i
+    (la correlación de la cópula, amortiguada). Devuelve (p_conjunta, p_independiente).
+    """
+    indep_model = float(np.prod(model_marginals))
+    indep_adj = float(np.prod(adjusted_marginals))
+    lift = model_joint / indep_model if indep_model > 0 else 1.0
+    p = indep_adj * lift ** LIFT_WEIGHT
+    return float(np.clip(p, 0.0, min(adjusted_marginals))), indep_adj
+
+
 def _compatible(legs: list[Leg]) -> bool:
     keys = [leg.unique_key for leg in legs]
     return len(keys) == len(set(keys))
@@ -517,7 +568,10 @@ def evaluate_parlay(legs: list[Leg], weekly: pd.DataFrame | None = None,
         raise ValueError("Patas incompatibles: misma estadística/jugador o dos lados del mismo partido")
     sim = JointSimulator(legs, weekly, n, seed)
     idx = range(len(legs))
-    return _summarize(legs, sim.joint(idx), float(np.prod(sim.marginals)), bankroll)
+    p, indep = adjusted_joint(sim.joint(idx), sim.marginals, [leg.prob for leg in legs])
+    out = _summarize(legs, p, indep, bankroll)
+    out["mc_joint_prob_pct"] = round(sim.joint(idx) * 100, 2)
+    return out
 
 
 PARLAY_MODES = ("mixed", "players", "teams")
@@ -539,12 +593,14 @@ def select_pool(legs: list[Leg], mode: str = "mixed", pool_size: int = 30) -> li
     best: dict[tuple, Leg] = {}
     for leg in legs:
         if (leg.kind != "player" or not is_main_market(leg.market) or leg.prob < PLAYER_POOL_MIN_PROB
+                or leg.ev_pct > MAX_CREDIBLE_EV
                 or not PLAYER_POOL_MIN_ODDS <= leg.decimal_odds <= PLAYER_POOL_MAX_ODDS):
             continue
         if leg.unique_key not in best or leg.ev_pct > best[leg.unique_key].ev_pct:
             best[leg.unique_key] = leg
     players = sorted(best.values(), key=lambda l: l.ev_pct, reverse=True)
-    teams = sorted((l for l in legs if l.kind == "team" and l.prob >= POOL_MIN_LEG_PROB),
+    teams = sorted((l for l in legs if l.kind == "team" and l.prob >= POOL_MIN_LEG_PROB
+                    and l.ev_pct <= MAX_CREDIBLE_EV),
                    key=lambda l: l.ev_pct, reverse=True)
     if mode == "players":
         return players[:pool_size]
@@ -556,7 +612,7 @@ def select_pool(legs: list[Leg], mode: str = "mixed", pool_size: int = 30) -> li
 
 def build_parlays(legs: list[Leg], weekly: pd.DataFrame | None = None,
                   min_legs: int = 2, max_legs: int = 6, pool_size: int = 30,
-                  beam_width: int = 300, min_ev: float = 0.0, top_n: int = 5,
+                  beam_width: int = 300, min_ev: float = MIN_EDGE_PCT, top_n: int = 5,
                   bankroll: float = 1000.0, n: int = N_SIMULATIONS,
                   seed: int | None = None, mode: str = "mixed") -> dict[str, list[dict]]:
     """Genera combinadas +EV de 2 a `max_legs` patas, agrupadas por riesgo.
@@ -575,6 +631,7 @@ def build_parlays(legs: list[Leg], weekly: pd.DataFrame | None = None,
 
     sim = JointSimulator(pool, weekly, n, seed)
     hits, marg, k = sim.hits, sim.marginals, len(pool)
+    adj = np.array([leg.prob for leg in pool])        # marginales ajustadas (modelo + mercado)
     odds = np.array([leg.decimal_odds for leg in pool])
     keys = [leg.unique_key for leg in pool]
     is_player = np.array([leg.kind == "player" for leg in pool])
@@ -597,13 +654,13 @@ def build_parlays(legs: list[Leg], weekly: pd.DataFrame | None = None,
 
         scored = []
         for combo, vec in candidates.items():
-            p = float(vec.mean())
+            p, _ = adjusted_joint(float(vec.mean()), marg[list(combo)], adj[list(combo)])
             combo_odds = float(np.prod(odds[list(combo)]))
             ev = p * combo_odds - 1
             scored.append((combo, p, ev))
             n_pl = int(is_player[list(combo)].sum())
             mixed_ok = mode != "mixed" or 0 < n_pl < len(combo)
-            if (size >= min_legs and mixed_ok and ev * 100 > min_ev
+            if (size >= min_legs and mixed_ok and min_ev < ev * 100 <= MAX_CREDIBLE_PARLAY_EV
                     and classify_risk(p, round(combo_odds, 2))):
                 found.append((combo, p))
 
@@ -614,7 +671,7 @@ def build_parlays(legs: list[Leg], weekly: pd.DataFrame | None = None,
 
     for combo, p in found:
         chosen = [pool[i] for i in combo]
-        summary = _summarize(chosen, p, float(np.prod(marg[list(combo)])), bankroll)
+        summary = _summarize(chosen, p, float(np.prod(adj[list(combo)])), bankroll)
         if summary["tier"] and summary["ev_pct"] > min_ev:
             out[summary["tier"]].append(summary)
 

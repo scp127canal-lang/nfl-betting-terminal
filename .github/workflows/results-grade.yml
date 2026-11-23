@@ -1,0 +1,60 @@
+name: Calificar resultados del modelo
+
+# Cada día (después de los partidos y de que nflverse publique estadísticas)
+# califica las selecciones pendientes de tracking/picks.csv. No usa The-Odds-API.
+on:
+  schedule:
+    - cron: "0 10 * * *"     # 05:00 ET: partidos de la noche anterior
+    - cron: "0 16 * * *"     # 11:00 ET: reintento cuando nflverse ya actualizó stats
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: odds-refresh        # mismo grupo que la descarga de cuotas: nunca chocan los commits
+  cancel-in-progress: false
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Calificar selecciones pendientes
+        id: grade
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          if [ ! -f tracking/picks.csv ]; then
+            echo "Aún no hay selecciones registradas"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python tracking.py grade
+
+      - name: Guardar resultados en el repo
+        if: steps.grade.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tracking/
+          if git diff --cached --quiet; then
+            echo "Sin cambios en tracking/"
+            exit 0
+          fi
+          git commit -m "Resultados: selecciones calificadas"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1

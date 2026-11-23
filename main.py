@@ -22,7 +22,7 @@ import bet_builder as bb
 import data_pipeline as dp
 import prediction_engine as pe
 import scheduler
-from config import GEMINI_API_KEY, GEMINI_MODEL, american_to_decimal
+from config import GEMINI_API_KEY, GEMINI_MODEL, LOCAL_SCHEDULER, american_to_decimal
 from odds_pipeline import MARKET_STAT_MAP
 
 logger = logging.getLogger("nfl_api")
@@ -368,7 +368,12 @@ async def lifespan(_app: FastAPI):
         logger.warning("GEMINI_API_KEY no configurada: /chat deshabilitado")
     scheduler.on_refresh(state.invalidate)
     scheduler.load_snapshot_from_disk()
-    scheduler.start_scheduler()
+    # Las cuotas ya se actualizan con GitHub Actions antes de cada jornada (snapshots/).
+    # El refresco local de las 8 AM gasta créditos de más: solo con LOCAL_SCHEDULER=1.
+    if LOCAL_SCHEDULER:
+        scheduler.start_scheduler()
+    else:
+        logger.info("Scheduler local desactivado (LOCAL_SCHEDULER=0): cuotas vía GitHub Actions")
     yield
     scheduler.stop_scheduler()
 
@@ -379,7 +384,8 @@ app = FastAPI(title="NFL +EV API", version="1.0.0", lifespan=lifespan)
 @app.get("/health")
 def health():
     return jsonable({"status": "ok", "week": state.week(), "gemini": gemini_client is not None,
-                     "next_odds_refresh": scheduler.next_run_time(),
+                     "local_scheduler": LOCAL_SCHEDULER,
+                     "next_odds_refresh": scheduler.next_run_time() or "GitHub Actions (~1 h antes de cada jornada)",
                      "odds_snapshot": scheduler.get_snapshot().get("meta")})
 
 

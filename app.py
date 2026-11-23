@@ -131,9 +131,11 @@ def player_detail_view() -> None:
         st.warning("Sin props de The-Odds-API para este partido: se muestran los jugadores con más uso "
                    "reciente y líneas de referencia (introduce la cuota manualmente).")
     elif not scan.empty:
-        n_plus = int((scan["ev_pct"] > 0).sum())
-        st.caption(f"Escáner +EV: {n_plus} de {int(scan['ev_pct'].notna().sum())} líneas con valor "
-                   f"(modelo Monte Carlo > probabilidad implícita).")
+        n_plus = int(scan["is_plus_ev"].fillna(False).astype(bool).sum())
+        n_sus = int((scan["ev_pct"] > ui.pe.MAX_CREDIBLE_EV).sum())
+        st.caption(f"Escáner +EV: {n_plus} de {int(scan['ev_pct'].notna().sum())} líneas con valor real "
+                   f"(prob. ajustada Monte Carlo + mercado, EV {ui.pe.MIN_EDGE_PCT:g}–{ui.pe.MAX_CREDIBLE_EV:g}%)"
+                   + (f" · {n_sus} con EV irreal marcadas ⚠️ Revisar" if n_sus else "") + ".")
 
     players = players.assign(player_id=[ui.player_id(k, t) for k, t in
                                         zip(players["name_key"], players["team"])])
@@ -171,3 +173,4 @@ if st.session_state.current_view == "player_detail" and st.session_state.selecte
     player_detail_view()
 else:
     games_view()
+    ui.render_performance()

@@ -4,7 +4,7 @@ Terminal de analítica para apuestas de la NFL que busca **valor esperado positi
 
 - Interfaz **Streamlit** de pantalla única, en modo oscuro.
 - API **FastAPI** con chat de **Gemini** (function calling).
-- Actualización diaria de cuotas a las 8:00 AM los días con partido.
+- Cuotas actualizadas ~1 h antes de cada jornada con GitHub Actions, y **seguimiento de resultados reales** del modelo.
 
 > Todas las cuotas se muestran en **formato decimal** (ej. `1.91`).
 
@@ -14,13 +14,13 @@ Terminal de analítica para apuestas de la NFL que busca **valor esperado positi
 
 **Partidos**
 - Tarjetas por partido con logos, marcador proyectado por simulación y cuotas de moneyline, spread y total.
-- Un badge `🟢 +EV` aparece cuando el modelo encuentra valor.
+- Un badge `🟢 +EV` aparece cuando la probabilidad ajustada da un EV de al menos 3%.
 
 **Analítica de jugadores** (al tocar un partido)
 - Catálogo de jugadores con props y vista enfocada en uno solo, con botón para volver al resto.
 - Categorías ⚽ Touchdowns · 🏈 Pases · 🏃 Acarreos · 🎯 Recepciones · 🔀 Todos. Cubre todos los mercados de jugador de The-Odds-API: yardas, TDs, intentos, completos, intercepciones, recepciones, Anytime TD y Primer TD, con sus líneas alternas.
 - Métricas de los últimos 10 partidos (L10) y gráfico de *hit-rate* contra la línea activa.
-- Tabla de escaleras alternas con la probabilidad Monte Carlo, el EV y la *Fair Odds* de cada línea.
+- Tabla de escaleras alternas con la probabilidad ajustada, el EV y la *Fair Odds* de cada línea.
 - 🎯 **Línea Más Probable**: el resultado que más se repite en las 10k simulaciones (moda), comparado con la línea de la casa.
 - Edición manual de línea y cuota para evaluar cualquier oferta.
 
@@ -41,6 +41,12 @@ Terminal de analítica para apuestas de la NFL que busca **valor esperado positi
 - Campo **🎯 Cuota Real Ajustada** para meter la cuota que de verdad ofrece la casa en combinadas del mismo partido. El EV y el pago se recalculan con ella.
 
 **Salvaguardas del modelo**
+- **Probabilidad ajustada**: el EV no usa el Monte Carlo puro. Lo mezcla con la probabilidad del mercado sin margen (*no-vig*):
+  - Props de jugador: 50% modelo / 50% mercado, con menos peso para el modelo si el jugador tiene menos de 10 partidos.
+  - Moneyline, spread y total: 30% modelo. Primer TD: 30% modelo.
+  - Cuanto más discrepa el modelo del mercado, menos peso tiene. Una discrepancia enorme suele ser información que el modelo no ve (lesión, cambio de rol).
+- **Umbral +EV**: solo cuenta como valor un EV de **3% a 25%**. Por encima de 25% se marca `⚠️ Revisar`: casi siempre es un error del modelo, no una oportunidad.
+- **Combinadas**: la correlación simulada entre patas se aplica amortiguada (raíz del *lift*), y se descartan las combinadas con EV > 100%.
 - **Realism Guard**: rechaza líneas más de un 15% por encima del máximo del jugador en sus últimos 10 partidos.
 - Distribución **Gamma cero-inflada** para yardas y **Poisson / Binomial negativa** para conteos (TDs, recepciones, INT…).
 
@@ -56,7 +62,9 @@ Terminal de analítica para apuestas de la NFL que busca **valor esperado positi
 | `odds_pipeline.py` | The-Odds-API: catálogo de mercados, conversión a decimal, caché |
 | `prediction_engine.py` | Monte Carlo, Realism Guard, EV, Fair Odds, línea más probable |
 | `bet_builder.py` | Patas, correlaciones, simulación conjunta, niveles de riesgo, Kelly |
-| `scheduler.py` | Descarga diaria de cuotas (APScheduler) |
+| `scheduler.py` | Lectura del snapshot de cuotas; descarga local opcional a las 8 AM (`LOCAL_SCHEDULER=1`) |
+| `refresh_snapshot.py` | Descarga de cuotas antes de cada jornada (GitHub Actions) |
+| `tracking.py` | Registro y calificación de las selecciones del modelo (`tracking/picks.csv`) |
 | `main.py` | API FastAPI y chat con Gemini |
 | `run.py` | Arranca la API y Streamlit juntos |
 | `config.py` | Variables de entorno, paleta de colores, `american_to_decimal` |
@@ -80,7 +88,8 @@ Copia `.env.example` a `.env` y añade tus claves:
 ```ini
 GEMINI_API_KEY=tu_api_key_aqui          # https://aistudio.google.com/apikey
 THE_ODDS_API_KEY=tu_odds_api_key_aqui   # https://the-odds-api.com (también se acepta ODDS_API_KEY)
-MORNING_REFRESH_HOUR=8                  # hora de la descarga diaria (hora local)
+# LOCAL_SCHEDULER=1                     # opcional: descarga local diaria (redundante con GitHub Actions)
+MORNING_REFRESH_HOUR=8                  # hora de esa descarga local
 GEMINI_MODEL=gemini-3.8-flash
 # ODDS_PLAYER_MARKETS=core              # opcional: menos mercados para gastar menos créditos
 # APP_PASSWORD=...                      # opcional: pide contraseña al abrir la app
@@ -103,7 +112,7 @@ python run.py
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/health` | Estado, semana activa y próxima actualización de cuotas |
+| GET | `/health` | Estado, semana activa y snapshot de cuotas vigente |
 | GET | `/matchups` | Partidos de la semana con proyecciones |
 | POST | `/predict/prop` | Evalúa un prop: línea, cuota y lado → probabilidad, EV, Fair Odds |
 | POST | `/parlay/evaluate` | Probabilidad conjunta y EV de una combinada |
@@ -144,6 +153,22 @@ El workflow `.github/workflows/odds-refresh.yml` actualiza las cuotas **~1 hora 
 
 Coste aproximado con el catálogo completo: domingo ~320 créditos (3 jornadas), jueves y lunes ~20 cada uno, ~1,500–2,000 al mes.
 
+### Seguimiento de resultados
+
+Para saber si el +EV se convierte en ganancias reales:
+
+1. En cada jornada, el mismo workflow guarda en `tracking/picks.csv` lo que el modelo recomienda, con la cuota de ese momento:
+   - Las sencillas +EV (máx. 12, solo líneas principales, cuota ≤ 4.00).
+   - La mejor combinada de cada nivel de riesgo.
+2. `.github/workflows/results-grade.yml` corre cada día a las 05:00 y 11:00 ET. Califica las pendientes con el marcador final y las estadísticas de nflverse:
+   - Ganada / perdida / anulada. Push o jugador que no jugó = anulada.
+   - Stake plano de 1 unidad.
+3. En la app: **📈 Rendimiento del modelo**, al final de la vista de partidos. Muestra acierto real vs probabilidad esperada, unidades y ROI, por sencillas y por nivel de riesgo.
+
+Con menos de ~100–200 selecciones, el ROI es sobre todo varianza. La señal útil es que el acierto real se parezca a la probabilidad esperada (calibración).
+
+Local: `python tracking.py grade` · `python tracking.py summary`.
+
 > Como el bot hace commits, antes de subir cambios propios ejecuta `git pull`.
 
 ## Despliegue
@@ -156,7 +181,7 @@ ODDS_API_KEY = "..."
 APP_PASSWORD = "una-contraseña-para-compartir"   # activa la pantalla de acceso
 ```
 
-Lo que vive en FastAPI (la descarga diaria de las 8 AM, el chat `/chat` y los demás endpoints) necesita un servicio que mantenga procesos corriendo, como Render o Railway, usando `run.py`.
+Lo que vive en FastAPI (el chat `/chat` y los demás endpoints) necesita un servicio que mantenga procesos corriendo, como Render o Railway, usando `run.py`.
 
 ⚠️ Si la app es pública, cualquier visitante puede gastar tus créditos de The-Odds-API. Define `APP_PASSWORD` para que pida contraseña al entrar; sin esa variable la app abre directamente, como en local.
 

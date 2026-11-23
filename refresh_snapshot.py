@@ -199,6 +199,14 @@ def main() -> int:
         print(f"ERROR The-Odds-API: {exc}")
         return 1
     print(json.dumps(result, indent=2, ensure_ascii=False))
+    # Seguimiento: guarda las selecciones del modelo para esta jornada (tracking/picks.csv)
+    try:
+        import tracking
+        n = tracking.log_slot_picks(now, result["slot"], pd.read_parquet(OUT_DIR / "game_odds.parquet"),
+                                    pd.read_parquet(OUT_DIR / "player_props.parquet"))
+        print(f"Seguimiento: {n} selección(es) nuevas registradas en tracking/picks.csv")
+    except Exception as exc:                      # nunca bloquea la actualización de cuotas
+        log.warning("No se pudieron registrar las selecciones: %s", exc)
     _gh_output(changed="true", slot=result["slot"].replace(" ", "_"))
     return 0
 

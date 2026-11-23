@@ -301,50 +301,131 @@ def expected_value_pct(real_prob: float, decimal_odds: float) -> float:
     return round((real_prob * decimal_odds - 1) * 100, 2)
 
 
-def prop_edge(model_prob: float, decimal_odds: float) -> dict:
-    """Ventaja de un prop: modelo Monte Carlo vs probabilidad implícita de la cuota.
+# --------------------------------------------------------------------------- #
+# Probabilidad AJUSTADA: Monte Carlo mezclado con el mercado (sin vig)
+#
+# El Monte Carlo solo ve 10 partidos del jugador; la línea de la casa incorpora
+# lesiones, rival, clima y el dinero de apostadores profesionales. Mezclar ambas
+# frena las "ventajas" falsas (líneas extremas, poco historial) y deja +EV solo
+# donde el modelo discrepa del mercado de forma clara.
+# --------------------------------------------------------------------------- #
+MODEL_WEIGHT = 0.50          # props de jugador con 10 partidos de historial
+MODEL_WEIGHT_TEAM = 0.30     # moneyline / spread / total: mercado muy eficiente
+MODEL_WEIGHT_FIRST_TD = 0.30  # Primer TD: modelo más simple
+ONE_SIDED_VIG = 0.07         # margen estimado cuando la casa solo ofrece un lado (alternas, Sí/No)
+MIN_EDGE_PCT = 3.0           # +EV solo si EV ajustado >= 3% (colchón ante error del modelo)
+MAX_CREDIBLE_EV = 25.0       # EV mayor = "demasiado bueno": el mercado sabe algo (lesión, rol) -> revisar
+DISAGREE_SCALE = 1.0         # cuanto más discrepa el modelo del mercado (log-odds), menos peso tiene
+PROB_FLOOR, PROB_CEIL = 0.01, 0.97
 
-    Ej.: cuota 1.85 -> implícita 54.05%. Si el modelo da 58.6%:
-    EV% = 0.586 * 1.85 - 1 = +8.41%  ·  Fair Odds = 1 / 0.586 = 1.71
-    `model_prob` en 0-1.
+
+def _logit(p: float) -> float:
+    p = float(np.clip(p, 1e-4, 1 - 1e-4))
+    return float(np.log(p / (1 - p)))
+
+
+def no_vig_prob(decimal_odds: float | None, other_odds: float | None = None) -> float | None:
+    """Probabilidad del mercado sin margen de la casa.
+
+    Con los dos lados (Over/Under, local/visita): p = (1/a) / (1/a + 1/b).
+    Con un solo lado: p = (1/a) / (1 + margen estimado).
+    """
+    if decimal_odds is None or pd.isna(decimal_odds) or decimal_odds <= 1:
+        return None
+    a = 1 / float(decimal_odds)
+    if other_odds is not None and not pd.isna(other_odds) and other_odds > 1:
+        return a / (a + 1 / float(other_odds))
+    return a / (1 + ONE_SIDED_VIG)
+
+
+def model_weight(n_games: int | None = None, base: float = MODEL_WEIGHT) -> float:
+    """Peso del modelo: completo con 10 partidos, proporcionalmente menor con menos."""
+    if n_games is None:
+        return base
+    return base * min(1.0, max(n_games, 0) / REALISM_GAMES)
+
+
+def effective_weight(model_prob: float, market_prob: float | None, weight: float = MODEL_WEIGHT) -> float:
+    """Peso real del modelo tras penalizar la discrepancia con el mercado."""
+    if market_prob is None:
+        return 1.0
+    delta = _logit(model_prob) - _logit(market_prob)
+    return weight / (1 + (delta / DISAGREE_SCALE) ** 2)
+
+
+def blend_prob(model_prob: float, market_prob: float | None, weight: float = MODEL_WEIGHT) -> float:
+    """p_ajustada = w' · p_modelo + (1 − w') · p_mercado (acotada a [1%, 97%]).
+
+    w' = w / (1 + (Δlogit / DISAGREE_SCALE)²): si el modelo y el mercado discrepan
+    mucho (ej. 40% vs 5%), casi siempre es información que el modelo no tiene, así
+    que el peso del modelo se reduce fuertemente.
+    """
+    if market_prob is None:
+        return float(np.clip(model_prob, PROB_FLOOR, PROB_CEIL))
+    w = effective_weight(model_prob, market_prob, weight)
+    p = w * model_prob + (1 - w) * market_prob
+    return float(np.clip(p, PROB_FLOOR, PROB_CEIL))
+
+
+def prop_edge(model_prob: float, decimal_odds: float, market_prob: float | None = None,
+              weight: float = MODEL_WEIGHT) -> dict:
+    """Ventaja de una selección con probabilidad AJUSTADA (modelo + mercado).
+
+    Ej.: cuota 1.85 (sin vig ≈ 52%), Monte Carlo 60%, peso 0.5 -> ajustada 56%:
+    EV% = 0.56 * 1.85 - 1 = +3.6%  ·  Fair Odds = 1 / 0.56 = 1.79
+    `model_prob` y `market_prob` en 0-1; si no se da `market_prob` se estima de la cuota.
     """
     implied = implied_probability(decimal_odds)
-    ev = expected_value_pct(model_prob, decimal_odds)
+    mkt = market_prob if market_prob is not None else no_vig_prob(decimal_odds)
+    p = blend_prob(model_prob, mkt, weight)
+    ev = expected_value_pct(p, decimal_odds)
     return {
         "decimal_odds": round(float(decimal_odds), 2),
         "implied_prob_pct": implied,
-        "model_prob_pct": round(model_prob * 100, 2),
-        "edge_pct": round(model_prob * 100 - implied, 2),
+        "mc_prob_pct": round(model_prob * 100, 2),            # Monte Carlo puro
+        "market_prob_pct": round(mkt * 100, 2) if mkt is not None else None,
+        "model_prob_pct": round(p * 100, 2),                  # probabilidad ajustada (la que cuenta)
+        "edge_pct": round(p * 100 - implied, 2),
         "ev_pct": ev,
-        "fair_odds": round(1 / model_prob, 2) if model_prob > 0 else None,
-        "is_plus_ev": bool(model_prob * 100 > implied),
+        "fair_odds": round(1 / p, 2) if p > 0 else None,
+        "is_plus_ev": bool(MIN_EDGE_PCT <= ev <= MAX_CREDIBLE_EV),
+        "suspicious": bool(ev > MAX_CREDIBLE_EV),
+        "weight": round(effective_weight(model_prob, mkt, weight), 2),
     }
 
 
 def evaluate_prop_lines(sims: np.ndarray, lines: pd.DataFrame,
-                        player_stats=None, stat_col: str | None = None) -> pd.DataFrame:
+                        player_stats=None, stat_col: str | None = None,
+                        weight: float | None = None) -> pd.DataFrame:
     """Evalúa TODAS las líneas (oficiales y alternas) de un prop con una sola simulación.
 
     `lines`: columnas `line`, `over`, `under` (cuotas decimales; NaN si la casa no la ofrece).
-    Añade por lado: *_prob_pct (modelo), *_ev_pct, *_fair, *_plus_ev, y `realism_ok`.
+    Añade por lado: *_prob_pct (AJUSTADA modelo+mercado), *_mc_pct (Monte Carlo puro),
+    *_ev_pct, *_fair, *_plus_ev, y `realism_ok`.
     Las líneas que no pasan el Realism Guard no reciben EV.
     """
     out = lines.copy()
     for col in ("over", "under"):
         if col not in out:
             out[col] = np.nan
+    if weight is None:
+        n_hist = len(_extract_values(player_stats, stat_col, REALISM_GAMES)) if player_stats is not None else None
+        weight = model_weight(n_hist)
     rows = []
     for r in out.itertuples(index=False):
         guard_ok = (validate_prop_realism(player_stats, r.line, stat_col)["is_valid"]
                     if player_stats is not None else True)
         row = {"realism_ok": guard_ok}
-        for side in ("over", "under"):
-            p = probability_from_sims(sims, r.line, side)
-            odds = getattr(r, side)
+        for side, other in (("over", "under"), ("under", "over")):
+            mc = probability_from_sims(sims, r.line, side)
+            odds, other_odds = getattr(r, side), getattr(r, other)
+            mkt = no_vig_prob(odds, other_odds)
+            p = blend_prob(mc, mkt, weight)
+            row[f"{side}_mc_pct"] = round(mc * 100, 2)
             row[f"{side}_prob_pct"] = round(p * 100, 2)
             row[f"{side}_fair"] = round(1 / p, 2) if p > 0 else None
             if guard_ok and odds is not None and not pd.isna(odds) and odds > 1:
-                edge = prop_edge(p, float(odds))
+                edge = prop_edge(mc, float(odds), mkt, weight)
                 row[f"{side}_ev_pct"], row[f"{side}_plus_ev"] = edge["ev_pct"], edge["is_plus_ev"]
             else:
                 row[f"{side}_ev_pct"], row[f"{side}_plus_ev"] = None, False
@@ -355,13 +436,20 @@ def evaluate_prop_lines(sims: np.ndarray, lines: pd.DataFrame,
 def evaluate_manual_prop(line: float, decimal_odds: float, player_stats=None,
                          stat_col: str | None = None, side: str = "over",
                          sims: np.ndarray | None = None, n: int = N_SIMULATIONS,
-                         seed: int | None = None) -> dict:
-    """Consulta manual: línea + cuota decimal pura -> prob. implícita,
-    prob. real Monte Carlo y % EV. Pasa siempre por el Realism Guard cuando
-    hay historial; una línea rechazada no recibe probabilidad ni EV."""
+                         seed: int | None = None, market_prob: float | None = None,
+                         weight: float | None = None) -> dict:
+    """Consulta manual: línea + cuota decimal pura -> prob. implícita, prob. Monte
+    Carlo, prob. AJUSTADA (modelo + mercado sin vig) y % EV sobre la ajustada.
+    Pasa siempre por el Realism Guard cuando hay historial; una línea rechazada
+    no recibe probabilidad ni EV.
+
+    `market_prob`: prob. sin vig del mercado para este lado (0-1). Si no se da,
+    se estima de la propia cuota con un margen típico.
+    """
     implied = implied_probability(decimal_odds)
     result = {"line": line, "decimal_odds": decimal_odds, "side": side,
-              "implied_prob_pct": implied, "real_prob_pct": None, "ev_pct": None,
+              "implied_prob_pct": implied, "real_prob_pct": None, "mc_prob_pct": None,
+              "market_prob_pct": None, "ev_pct": None,
               "fair_odds": None, "projection_mean": None, "projection_median": None,
               "realism": None, "verdict": None}
 
@@ -378,18 +466,26 @@ def evaluate_manual_prop(line: float, decimal_odds: float, player_stats=None,
     if sims is None:
         raise ValueError("Se necesita player_stats o sims para estimar la probabilidad real")
 
+    if weight is None:
+        n_hist = (len(_extract_values(player_stats, stat_col, REALISM_GAMES))
+                  if player_stats is not None and stat_col is not None else None)
+        weight = model_weight(n_hist)
     p = probability_from_sims(sims, line, side)
-    edge = prop_edge(p, decimal_odds)
+    edge = prop_edge(p, decimal_odds, market_prob, weight)
     ev = edge["ev_pct"]
     result.update({
-        "real_prob_pct": edge["model_prob_pct"],
+        "real_prob_pct": edge["model_prob_pct"],     # ajustada
+        "mc_prob_pct": edge["mc_prob_pct"],
+        "market_prob_pct": edge["market_prob_pct"],
+        "model_weight": edge["weight"],
         "ev_pct": ev,
         "edge_pct": edge["edge_pct"],
         "is_plus_ev": edge["is_plus_ev"],
         "fair_odds": edge["fair_odds"],
         "projection_mean": round(float(np.mean(sims)), 1),
         "projection_median": round(float(np.median(sims)), 1),
-        "verdict": "+EV" if ev > 0 else "-EV",
+        "verdict": ("+EV" if edge["is_plus_ev"] else "⚠️ Revisar (EV irreal)" if edge["suspicious"]
+                    else "EV marginal" if ev > 0 else "-EV"),
     })
     return result
 
@@ -404,15 +500,39 @@ def first_td_sims(weekly: pd.DataFrame, log: pd.DataFrame, home: str | None, awa
     return simulate_first_td(log["total_tds"], team_tds, opp_tds, n=n, seed=seed)
 
 
+def market_probs(df: pd.DataFrame, keys: list[str], outcome_col: str = "outcome",
+                 odds_col: str = "decimal_odds") -> pd.Series:
+    """Probabilidad sin vig del mercado para cada fila.
+
+    Por grupo (`keys`, ej. jugador + mercado + línea) toma la cuota mediana entre
+    casas de cada outcome y quita el margen con los dos lados; si el grupo solo
+    tiene un lado (líneas alternas, Anytime TD) estima el margen.
+    """
+    if df.empty:
+        return pd.Series(dtype=float)
+    med = df.groupby(keys + [outcome_col], dropna=False)[odds_col].median().rename("_med").reset_index()
+    inv = (1 / med["_med"]).where(med["_med"] > 1)
+    med["_inv"] = inv
+    grp = med.groupby(keys, dropna=False)
+    med["_sum"] = grp["_inv"].transform("sum")
+    med["_n"] = grp["_inv"].transform("count")
+    med["_p"] = np.where(med["_n"] >= 2, med["_inv"] / med["_sum"], med["_inv"] / (1 + ONE_SIDED_VIG))
+    merged = df[keys + [outcome_col]].reset_index().merge(
+        med[keys + [outcome_col, "_p"]], on=keys + [outcome_col], how="left").set_index("index")
+    return merged["_p"].reindex(df.index)
+
+
 def evaluate_props_board(props: pd.DataFrame, weekly: pd.DataFrame,
                          n: int = N_SIMULATIONS, seed: int | None = None) -> pd.DataFrame:
     """Evalúa todo el tablero de props de `odds_pipeline` contra el historial de
     `data_pipeline`. Simula una vez por jugador y mercado y reutiliza las
-    simulaciones para todas sus líneas alternativas."""
+    simulaciones para todas sus líneas alternativas. El EV usa la probabilidad
+    AJUSTADA (Monte Carlo + mercado sin vig)."""
     board = props[props["market"].isin(MARKET_STAT_MAP) & props["player"].notna()
                   & props["outcome"].isin(["Over", "Under"])].copy()
     if board.empty:
         return board
+    board["market_prob"] = market_probs(board, ["player", "market", "line"])
 
     results = []
     for (player, market), rows in board.groupby(["player", "market"]):
@@ -429,6 +549,7 @@ def evaluate_props_board(props: pd.DataFrame, weekly: pd.DataFrame,
                 sims = first_td_sims(weekly, log, home, away, n=n, seed=seed)
             else:
                 sims = simulate_stat(values, stat, n=n, seed=seed)
+        weight = model_weight(len(values), MODEL_WEIGHT_FIRST_TD if stat == "first_td" else MODEL_WEIGHT)
 
         for idx, row in rows.iterrows():
             if pd.isna(row["decimal_odds"]) or pd.isna(row["line"]):
@@ -436,13 +557,14 @@ def evaluate_props_board(props: pd.DataFrame, weekly: pd.DataFrame,
             if sims is None:
                 res = {"verdict": "SIN DATOS", "implied_prob_pct": implied_probability(row["decimal_odds"])}
             else:
+                mkt = row["market_prob"] if not pd.isna(row["market_prob"]) else None
                 res = evaluate_manual_prop(row["line"], row["decimal_odds"], values, hist_stat,
-                                           side=row["outcome"], sims=sims)
+                                           side=row["outcome"], sims=sims, market_prob=mkt, weight=weight)
                 res["realism_reason"] = res.pop("realism")["reason"]
             res["_idx"] = idx
             results.append(res)
 
-    keep = ["_idx", "implied_prob_pct", "real_prob_pct", "ev_pct", "fair_odds", "is_plus_ev",
-            "projection_mean", "verdict", "realism_reason"]
+    keep = ["_idx", "implied_prob_pct", "real_prob_pct", "mc_prob_pct", "ev_pct", "fair_odds",
+            "is_plus_ev", "projection_mean", "verdict", "realism_reason"]
     res_df = pd.DataFrame(results).reindex(columns=keep).set_index("_idx")
     return board.join(res_df).sort_values("ev_pct", ascending=False, na_position="last")

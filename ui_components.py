@@ -126,7 +126,10 @@ def ev_badge(ev_pct, fair_odds=None, plus_ev: bool | None = None) -> str:
     if _nan(ev_pct):
         return (f'<span class="evb evb-none">Fair Odds: {fmt_odds(fair_odds)}</span>'
                 if not _nan(fair_odds) else "")
-    plus = ev_pct > 0 if plus_ev is None else plus_ev
+    plus = pe.MIN_EDGE_PCT <= ev_pct <= pe.MAX_CREDIBLE_EV if plus_ev is None else plus_ev
+    if not plus and ev_pct > pe.MAX_CREDIBLE_EV:
+        return (f'<span class="evb evb-none" title="EV demasiado alto para ser real: el mercado probablemente '
+                f'sabe algo (lesión, rol). Verifica antes de apostar.">⚠️ Revisar · EV {ev_pct:+.0f}%</span>')
     if plus:
         return (f'<span class="evb evb-pos">🟢 +EV {ev_pct:+.1f}% · Fair Odds: '
                 f'{fmt_odds(fair_odds)}</span>')
@@ -324,7 +327,7 @@ def best_ev_by_player(scan: pd.DataFrame) -> dict[str, dict]:
     """Mejor prop +EV de cada jugador: {player: {ev_pct, fair_odds, label}}."""
     if scan.empty or "ev_pct" not in scan:
         return {}
-    plus = scan[scan["ev_pct"] > 0].sort_values("ev_pct", ascending=False)
+    plus = scan[scan["is_plus_ev"].fillna(False).astype(bool)].sort_values("ev_pct", ascending=False)
     out = {}
     for r in plus.drop_duplicates("player").itertuples(index=False):
         if r.market in op.YES_NO_MARKETS:
@@ -431,9 +434,10 @@ def first_td_sims(_weekly: pd.DataFrame, _log: pd.DataFrame, name_key: str,
 
 
 def make_player_leg(player: str, market: str, line: float, odds: float, side: str,
-                    game_id: str, weekly: pd.DataFrame) -> bb.Leg | None:
+                    game_id: str, weekly: pd.DataFrame, market_prob: float | None = None) -> bb.Leg | None:
     props = pd.DataFrame([{"event_id": game_id, "market": market, "player": player,
-                           "outcome": side.capitalize(), "line": line, "decimal_odds": odds}])
+                           "outcome": side.capitalize(), "line": line, "decimal_odds": odds,
+                           "market_prob": np.nan if market_prob is None else market_prob}])
     legs = bb.build_player_legs(props, weekly, seed=SEED)
     return legs[0] if legs else None
 
@@ -534,9 +538,9 @@ def add_to_slip(legs: list[bb.Leg]) -> None:
 
 
 def add_player_selection(player: str, market: str, line: float, odds: float, side: str,
-                         game_id: str, weekly: pd.DataFrame) -> None:
+                         game_id: str, weekly: pd.DataFrame, market_prob: float | None = None) -> None:
     """Callback: corre antes del rerender, así la boleta lateral se actualiza al instante."""
-    leg = make_player_leg(player, market, line, odds, side, game_id, weekly)
+    leg = make_player_leg(player, market, line, odds, side, game_id, weekly, market_prob)
     if leg:
         add_to_slip([leg])
     else:
@@ -956,6 +960,73 @@ def render_api_diagnostics() -> None:
 
 
 # =========================================================================== #
+# 📈 Rendimiento del modelo (resultados reales)
+# =========================================================================== #
+@st.cache_data(show_spinner=False)
+def _tracking_data(mtime: float) -> tuple[pd.DataFrame, pd.DataFrame]:
+    import tracking
+    picks = tracking.load_picks()
+    return picks, tracking.summarize(picks)
+
+
+STATUS_LABEL = {"won": "✅ Ganada", "lost": "❌ Perdida", "void": "➖ Anulada", "pending": "⏳ Pendiente"}
+
+
+def render_performance() -> None:
+    """¿El +EV se materializa? Selecciones registradas 1 h antes de cada jornada y su resultado."""
+    import tracking
+    try:
+        mtime = tracking.PICKS_FILE.stat().st_mtime
+    except OSError:
+        mtime = None
+    with st.expander("📈 Rendimiento del modelo (resultados reales)", expanded=False):
+        if mtime is None:
+            st.caption("Aún no hay selecciones registradas. Cada jornada, ~1 h antes del kickoff, GitHub Actions "
+                       "guarda las sencillas +EV y la mejor combinada de cada riesgo; al día siguiente se "
+                       "califican con los resultados reales de nflverse.")
+            return
+        picks, summary = _tracking_data(mtime)
+        total = summary[summary["grupo"] == "TOTAL"]
+        if total.empty:
+            st.caption("Sin selecciones registradas.")
+            return
+        t = total.iloc[0]
+        settled = int(t["ganadas"] + t["perdidas"])
+        with st.container(key="evalmetrics"):
+            c1, c2, c3, c4 = st.columns(4, gap="small")
+            c1.metric("Calificadas", f"{settled}", f"{int(t['pendientes'])} pendientes", delta_color="off")
+            c2.metric("Acierto real", "—" if t["acierto_pct"] is None or pd.isna(t["acierto_pct"])
+                      else f"{t['acierto_pct']:.1f}%",
+                      None if pd.isna(t["prob_esperada_pct"]) else f"esperado {t['prob_esperada_pct']:.1f}%",
+                      delta_color="off")
+            c3.metric("Unidades", f"{t['unidades']:+.2f} u")
+            c4.metric("ROI", "—" if pd.isna(t["roi_pct"]) else f"{t['roi_pct']:+.1f}%",
+                      None if pd.isna(t["ev_esperado_pct"]) else f"EV esperado {t['ev_esperado_pct']:+.1f}%",
+                      delta_color="off")
+        if settled < 50:
+            st.caption(f"⚠️ Muestra pequeña ({settled} calificadas): con menos de ~100–200 selecciones el ROI "
+                       "es sobre todo varianza. Lo importante es que el acierto real se acerque al esperado.")
+        names = {"SENCILLA": "Sencillas", "BAJO": "🟢 Bajo", "MODERADO": "🟡 Moderado", "ALTO": "🔴 Alto",
+                 "TOTAL": "Total"}
+        st.dataframe(summary.assign(grupo=summary["grupo"].map(names)).rename(columns={
+            "grupo": "Grupo", "selecciones": "Sel.", "pendientes": "Pend.", "ganadas": "G", "perdidas": "P",
+            "anuladas": "Anul.", "acierto_pct": "Acierto %", "prob_esperada_pct": "Prob. esperada %",
+            "ev_esperado_pct": "EV esperado %", "unidades": "Unidades", "roi_pct": "ROI %"}),
+            hide_index=True, width="stretch")
+        recent = picks.sort_values("logged_at", ascending=False).head(25)
+        st.dataframe(pd.DataFrame({
+            "Fecha": recent["game_date"], "Tipo": recent["tier"].map(names).fillna(recent["tier"]),
+            "Selección": recent["label"], "Cuota": pd.to_numeric(recent["decimal_odds"], errors="coerce"),
+            "Prob. %": pd.to_numeric(recent["prob_pct"], errors="coerce"),
+            "EV %": pd.to_numeric(recent["ev_pct"], errors="coerce"),
+            "Resultado": recent["status"].map(STATUS_LABEL).fillna("⏳ Pendiente"),
+            "Unidades": pd.to_numeric(recent["profit"], errors="coerce")}),
+            hide_index=True, width="stretch")
+        st.caption("Stake plano de 1 unidad por selección, a la cuota registrada ~1 h antes del partido "
+                   "(consenso de casas; en combinadas del mismo partido la casa real suele pagar menos).")
+
+
+# =========================================================================== #
 # Tarjetas de partidos
 # =========================================================================== #
 def _team_block(team: str, win_pct: float | None = None) -> str:
@@ -1008,11 +1079,12 @@ def render_game_card(game, proj: dict | None, best: dict[str, bb.Leg], source: s
                 if leg is None:
                     st.button("Sin línea", key=f"odds_{gid}_{market}", disabled=True, width="stretch")
                     continue
-                plus = leg.ev_pct > 0
+                plus = pe.MIN_EDGE_PCT <= leg.ev_pct <= pe.MAX_CREDIBLE_EV
                 st.button(_market_button_label(leg), key=f"{'oddsev_' if plus else 'odds_'}{gid}_{market}",
                           width="stretch", on_click=add_to_slip, args=([leg],),
-                          help=f"Modelo MC {leg.prob:.1%} · implícita {leg.implied_prob_pct:.1f}% · añadir a la boleta")
-                st.markdown(f'<div class="ev-cap {"pos" if plus else "neg"}">MC {leg.prob:.0%} · '
+                          help=f"Prob. ajustada {leg.prob:.1%} (Monte Carlo {leg.model_prob:.1%} + mercado) · "
+                               f"implícita {leg.implied_prob_pct:.1f}% · añadir a la boleta")
+                st.markdown(f'<div class="ev-cap {"pos" if plus else "neg"}">P {leg.prob:.0%} · '
                             f'EV {leg.ev_pct:+.1f}%</div>', unsafe_allow_html=True)
 
 
@@ -1124,7 +1196,9 @@ def _side_cell(row, side: str) -> str:
     prob = getattr(row, f"{side}_prob_pct")
     badge = ev_badge(getattr(row, f"{side}_ev_pct"), getattr(row, f"{side}_fair"),
                      getattr(row, f"{side}_plus_ev"))
-    return (f'<span class="odd">{fmt_odds(odds)}</span><span class="mc">MC {prob:.1f}%</span>{badge}')
+    mc = getattr(row, f"{side}_mc_pct", None)
+    tip = f' title="Monte Carlo puro {mc:.1f}% · ajustada con el mercado {prob:.1f}%"' if mc is not None else ""
+    return (f'<span class="odd">{fmt_odds(odds)}</span><span class="mc"{tip}>P {prob:.1f}%</span>{badge}')
 
 
 def render_lines_table(ev_lines: pd.DataFrame, active_line: float, reference: bool) -> None:
@@ -1178,18 +1252,21 @@ def _render_td_board(props: pd.DataFrame, name: str, groups: list[str], weekly: 
             continue
         sims = (first_td_sims(weekly, log, name_key, home, away) if g == "first_td"
                 else player_sims(name_key, "total_tds", tuple(hist.tail(pe.REALISM_GAMES).tolist())))
-        p = pe.probability_from_sims(sims, 0.5, "over")
-        fair = round(1 / p, 2) if p > 0 else None
+        mc = pe.probability_from_sims(sims, 0.5, "over")
+        w = pe.model_weight(len(hist.tail(pe.REALISM_GAMES)),
+                            pe.MODEL_WEIGHT_FIRST_TD if g == "first_td" else pe.MODEL_WEIGHT)
         lines = player_lines(props, name, g) if has_odds else pd.DataFrame()
         row = lines.loc[lines["line"] == 0.5] if not lines.empty else lines
         odds = float(row["over"].iloc[0]) if not row.empty and not pd.isna(row["over"].iloc[0]) else None
         if odds:
-            e = pe.prop_edge(p, odds)
+            e = pe.prop_edge(mc, odds, pe.no_vig_prob(odds, row["under"].iloc[0]), w)
+            p = e["model_prob_pct"] / 100
             badge = ev_badge(e["ev_pct"], e["fair_odds"], e["is_plus_ev"])
         else:
-            badge = ev_badge(None, fair)
+            p = mc
+            badge = ev_badge(None, round(1 / p, 2) if p > 0 else None)
         cells.append(f'<div class="tdcell"><div class="k">{GROUP_LABEL[g]} · Sí</div>'
-                     f'<div class="v">{fmt_odds(odds)}</div><div class="muted">MC {p:.1%} · '
+                     f'<div class="v">{fmt_odds(odds)}</div><div class="muted">P {p:.1%} · MC {mc:.1%} · '
                      f'implícita {"—" if not odds else f"{100 / odds:.1f}%"}</div>{badge}</div>')
     if cells:
         st.markdown(f'<div class="tdboard">{"".join(cells)}</div>', unsafe_allow_html=True)
@@ -1296,7 +1373,7 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
             for s in ("over", "under"):
                 odd = r[s]
                 parts.append(f"{side_fmt(s.capitalize())} {fmt_odds(odd) if not pd.isna(odd) else '—'} "
-                             f"(MC {r[f'{s}_prob_pct']:.1f}%)")
+                             f"(P {r[f'{s}_prob_pct']:.1f}%)")
             return "  ·  ".join(parts)
 
         # --- ✍️ Edición manual: ARRIBA, sin scroll ---
@@ -1305,8 +1382,8 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
             c1, c2, c3 = st.columns([1.2, 3, 1.3], vertical_alignment="bottom")
             c1.pills("¿Anota?" if yes_no else "Lado", ["Over", "Under"], key=keys["side"], required=True,
                      format_func=side_fmt)
-            c2.selectbox("Cuota decimal y probabilidad Monte Carlo" if yes_no else
-                         "Línea alterna · cuota decimal y probabilidad Monte Carlo",
+            c2.selectbox("Cuota decimal y probabilidad ajustada" if yes_no else
+                         "Línea alterna · cuota decimal y probabilidad ajustada",
                          lines["line"].tolist(), key=keys["sel"], format_func=fmt_line)
             c3.toggle("Usar línea manual", key=keys["manual"], disabled=yes_no,
                       help="En mercados Sí/No la línea es fija; solo cambia la cuota" if yes_no else None)
@@ -1323,6 +1400,7 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
             c6.markdown(f'<div class="muted edit-hint">{hint}</div>', unsafe_allow_html=True)
 
         manual = st.session_state[keys["manual"]] and not yes_no
+        mkt_prob = None
         if manual:
             line, odds, odds_src = st.session_state[keys["mline"]], st.session_state[keys["modds"]], "manual"
         else:
@@ -1333,8 +1411,11 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
                 odds, odds_src = st.session_state[keys["modds"]], "manual"
             else:
                 odds, odds_src = float(book), "casa"
+                other = row["under" if side == "Over" else "over"].iloc[0]
+                mkt_prob = pe.no_vig_prob(odds, other)       # mercado sin vig con los dos lados
         line, odds = float(line), float(odds)
-        model_p = pe.probability_from_sims(sims, line, side.lower())
+        weight = pe.model_weight(len(hist.tail(pe.REALISM_GAMES)),
+                                 pe.MODEL_WEIGHT_FIRST_TD if stat == "first_td" else pe.MODEL_WEIGHT)
 
         # --- 🎯 Línea Más Probable (moda Monte Carlo) ---
         mode_sims = sims if stat != "first_td" else player_sims(
@@ -1343,7 +1424,8 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
                          "casa" if odds_src == "casa" else "tu línea", reference)
 
         # --- Evaluación +EV de la selección activa (resumen único) ---
-        res = pe.evaluate_manual_prop(line, odds, log, hist_stat, side=side.lower(), sims=sims)
+        res = pe.evaluate_manual_prop(line, odds, log, hist_stat, side=side.lower(), sims=sims,
+                                      market_prob=mkt_prob, weight=weight)
         with st.container(key="evalbox"):
             if res["verdict"] == "RECHAZADA":
                 st.error(f"🚫 Realism Guard: {res['realism']['reason']}")
@@ -1357,19 +1439,23 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
                 with st.container(key="evalmetrics"):
                     e1, e2, e3, e4 = st.columns(4, gap="small")
                     e1.metric("Prob. implícita", f"{res['implied_prob_pct']:.2f}%")
-                    e2.metric("Prob. real MC", f"{res['real_prob_pct']:.2f}%", f"{res['edge_pct']:+.2f} pts")
+                    e2.metric("Prob. ajustada", f"{res['real_prob_pct']:.2f}%", f"{res['edge_pct']:+.2f} pts")
                     e3.metric("% EV", f"{res['ev_pct']:+.2f}%")
                     e4.metric("Fair Odds", fmt_odds(res["fair_odds"]))
                 css = "verdict-pos" if res["is_plus_ev"] else "verdict-neg"
+                mkt_txt = (f"mercado sin vig {res['market_prob_pct']:.1f}%" if res.get("market_prob_pct") is not None
+                           else "mercado estimado")
                 st.markdown(f"<div class='verdict-row'><span class='{css}'>{res['verdict']}</span> "
-                            f"<span class='muted'>· EV = {res['real_prob_pct'] / 100:.4f} * {fmt_odds(odds)} - 1 · "
-                            f"media {res['projection_mean']:g} · mediana {res['projection_median']:g} · "
-                            f"Realism Guard OK (tope {res['realism']['threshold']:g})</span></div>",
-                            unsafe_allow_html=True)
+                            f"<span class='muted'>· Prob. ajustada = {res['model_weight']:.0%} Monte Carlo "
+                            f"({res['mc_prob_pct']:.1f}%) + {1 - res['model_weight']:.0%} {mkt_txt} · "
+                            f"EV = {res['real_prob_pct'] / 100:.4f} * {fmt_odds(odds)} - 1 · +EV desde "
+                            f"{pe.MIN_EDGE_PCT:g}% · media {res['projection_mean']:g} · mediana "
+                            f"{res['projection_median']:g} · Realism Guard OK (tope {res['realism']['threshold']:g})"
+                            f"</span></div>", unsafe_allow_html=True)
                 with st.container(key="addrow"):
                     st.button("➕ Añadir a la Boleta", key=f"add_{km}", type="primary",
                               on_click=add_player_selection,
-                              args=(name, market, line, odds, side, game_id, weekly),
+                              args=(name, market, line, odds, side, game_id, weekly, mkt_prob),
                               disabled=stat == "first_td",
                               help="Primer TD depende de todo el partido: no se combina en la boleta"
                               if stat == "first_td" else None)
@@ -1402,7 +1488,7 @@ def render_parlay_card(parlay: dict, legs_by_label: dict, bankroll: float, key: 
                     f"patas</span>", unsafe_allow_html=True)
         for leg in parlay["legs"]:
             st.markdown(f"<div class='leg-line'>• {esc(leg['label'])} <b>{fmt_odds(leg['decimal_odds'])}</b> "
-                        f"<span class='muted'>MC {leg['prob_pct']:.0f}%</span></div>", unsafe_allow_html=True)
+                        f"<span class='muted'>P {leg['prob_pct']:.0f}%</span></div>", unsafe_allow_html=True)
         stake = parlay["stake"]["stake_per_1000"] * bankroll / 1000
         st.markdown(
             '<div class="pstats">'
@@ -1475,7 +1561,7 @@ def render_bet_slip(weekly: pd.DataFrame) -> None:
             tag = game_tag(leg.event_id)
             tag_html = chip(("🔥 " if in_sgp else "") + tag, "chip-pink" if in_sgp else "") if tag else ""
             c1.markdown(f"<div class='leg-line'>{tag_html} {esc(leg.label)}<br><b>{fmt_odds(leg.decimal_odds)}</b> "
-                        f"<span class='muted'>· MC {leg.prob:.1%}</span></div>", unsafe_allow_html=True)
+                        f"<span class='muted'>· P {leg.prob:.1%} (MC {leg.model_prob:.0%})</span></div>", unsafe_allow_html=True)
             c2.button("❌", key=f"rm_{abs(hash(leg.label))}", on_click=remove_from_slip, args=(leg.label,),
                       help="Quitar de la boleta")
 
@@ -1510,7 +1596,7 @@ def render_bet_slip(weekly: pd.DataFrame) -> None:
 
     with st.container(key="slipmetrics"):
         c1, c2 = st.columns(2, gap="small")
-        c1.metric("Prob. conjunta MC", f"{rp['joint_prob_pct']:.2f}%")
+        c1.metric("Prob. conjunta", f"{rp['joint_prob_pct']:.2f}%")
         c2.metric("Prob. implícita", f"{rp['implied_prob_pct']:.2f}%")
         c3, c4 = st.columns(2, gap="small")
         c3.metric("Cuota usada", fmt_odds(rp["adjusted_odds"]),

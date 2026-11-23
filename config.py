@@ -32,6 +32,7 @@ THE_ODDS_API_KEY = setting("THE_ODDS_API_KEY") or setting("ODDS_API_KEY")
 MORNING_REFRESH_HOUR = int(setting("MORNING_REFRESH_HOUR", "8"))
 GEMINI_MODEL = setting("GEMINI_MODEL", "gemini-3.8-flash")
 APP_PASSWORD = setting("APP_PASSWORD")   # si se define, la app pide contraseña al entrar
+LOCAL_SCHEDULER = setting("LOCAL_SCHEDULER", "0").lower() in ("1", "true", "yes", "si")  # refresco local 8 AM (opcional)
 NFL_TIMEZONE = "America/New_York"  # las fechas de partido de la NFL van en hora del Este
 
 # --- Estilo Dark Mode (Streamlit) ---
