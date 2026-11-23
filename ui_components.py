@@ -932,6 +932,20 @@ def render_header(ctx: dict, api_url: str | None) -> None:
       <div class="chips">{''.join(chips)}</div></div>""", unsafe_allow_html=True)
 
 
+def render_api_diagnostics() -> None:
+    """Explica por qué no llegan cuotas en vivo, en vez de fallar en silencio."""
+    import config
+    if not ODDS_API_ENABLED:
+        detail = f" Error al leer Secrets: `{config.SECRETS_ERROR}`." if config.SECRETS_ERROR else ""
+        st.warning("🔑 No se detectó la clave de The-Odds-API, así que se usan las líneas de Vegas de nflverse "
+                   "(sin props de jugadores). En local: `ODDS_API_KEY=...` en `.env`. En Streamlit Cloud: "
+                   "⋮ → Settings → Secrets → `ODDS_API_KEY = \"tu_clave\"` (con comillas) y reinicia la app."
+                   + detail)
+    elif op.QUOTA.get("last_error"):
+        st.error(f"⚠️ The-Odds-API respondió con un error: {op.QUOTA['last_error']}. "
+                 "401 = clave inválida · 429 / OUT_OF_USAGE_CREDITS = sin créditos este mes.")
+
+
 # =========================================================================== #
 # Tarjetas de partidos
 # =========================================================================== #

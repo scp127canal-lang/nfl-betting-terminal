@@ -58,7 +58,8 @@ def games_view() -> None:
         board, event_map = ui.game_market_board(games, snap)
         legs = ui.team_legs(board, sched, f"{ctx['season']}-{week}-{snap}-{len(games)}")
         proj = ui.projections(games, sched)
-    sources = board.groupby("event_id")["source"].first().to_dict() if not board.empty else {}
+    ui.render_api_diagnostics()
+    sources =board.groupby("event_id")["source"].first().to_dict() if not board.empty else {}
 
     for start in range(0, len(games), 2):
         cols = st.columns(2)

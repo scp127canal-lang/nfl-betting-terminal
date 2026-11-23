@@ -7,18 +7,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+SECRETS_ERROR: str | None = None   # motivo si st.secrets no se pudo leer (p. ej. TOML mal escrito)
+
+
 def setting(name: str, default: str = "") -> str:
     """Lee una variable: primero el entorno / .env (local), luego st.secrets
     (Streamlit Community Cloud). Nunca falla si no hay secrets.toml."""
+    global SECRETS_ERROR
     value = os.getenv(name)
     if value:
-        return value
+        return value.strip()
     try:
         import streamlit as st
         value = st.secrets.get(name)
-    except Exception:
+    except Exception as exc:
+        SECRETS_ERROR = f"{type(exc).__name__}: {str(exc)[:200]}"
         value = None
-    return str(value) if value not in (None, "") else default
+    return str(value).strip() if value not in (None, "") else default
 
 
 # --- Variables de entorno / Secrets ---

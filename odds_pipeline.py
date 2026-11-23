@@ -85,20 +85,29 @@ ODDS_COLUMNS = [
     "market", "outcome", "player", "player_key", "line", "decimal_odds", "last_update",
 ]
 
-QUOTA = {"remaining": None, "used": None, "last_cost": None}
+QUOTA = {"remaining": None, "used": None, "last_cost": None, "last_error": None}
 
 
 class OddsAPIError(RuntimeError):
     pass
 
 
+def _fail(msg: str) -> OddsAPIError:
+    QUOTA["last_error"] = msg          # visible en la UI (sin la clave)
+    return OddsAPIError(msg)
+
+
 def _get(path: str, **params) -> list | dict:
     if not THE_ODDS_API_KEY or THE_ODDS_API_KEY == "tu_odds_api_key_aqui":
-        raise OddsAPIError("Falta THE_ODDS_API_KEY / ODDS_API_KEY en el archivo .env")
-    resp = requests.get(f"{BASE_URL}{path}",
-                        params={"apiKey": THE_ODDS_API_KEY, **params}, timeout=30)
+        raise _fail("Falta THE_ODDS_API_KEY / ODDS_API_KEY (.env en local o Secrets en Streamlit Cloud)")
+    try:
+        resp = requests.get(f"{BASE_URL}{path}",
+                            params={"apiKey": THE_ODDS_API_KEY, **params}, timeout=30)
+    except requests.RequestException as exc:
+        raise _fail(f"Sin conexión con The-Odds-API: {type(exc).__name__}") from exc
     if resp.status_code != 200:
-        raise OddsAPIError(f"The-Odds-API {resp.status_code}: {resp.text[:200]}")
+        raise _fail(f"The-Odds-API {resp.status_code}: {resp.text[:200]}")
+    QUOTA["last_error"] = None
     QUOTA.update(remaining=resp.headers.get("x-requests-remaining"),
                  used=resp.headers.get("x-requests-used"),
                  last_cost=resp.headers.get("x-requests-last"))
