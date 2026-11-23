@@ -1,14 +1,14 @@
 {
-  "refreshed_at": "2026-11-23T22:41:04+00:00",
+  "refreshed_at": "2026-11-23T22:46:54+00:00",
   "date": "2026-11-23",
-  "source": "manual",
+  "source": "github-actions",
   "slot": "manual",
   "slot_games": [],
   "slots_done": [],
   "events_refreshed": 1,
   "events_failed": [],
-  "game_odds_rows": 900,
-  "player_props_rows": 2674,
-  "players": 32,
-  "credits_remaining": "148"
+  "game_odds_rows": 1194,
+  "player_props_rows": 3439,
+  "players": 33,
+  "credits_remaining": "19960"
 }
