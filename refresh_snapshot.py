@@ -42,6 +42,8 @@ SLOT_GAP = dt.timedelta(minutes=45)        # kickoffs a <45 min del primero = mi
 LEAD = dt.timedelta(minutes=60)            # objetivo: 1 hora antes
 WINDOW_EARLY = dt.timedelta(minutes=80)    # se acepta correr entre 80 y 15 min antes
 WINDOW_LATE = dt.timedelta(minutes=15)     # (los cron de GitHub pueden retrasarse)
+CLOSE_EARLY = dt.timedelta(minutes=14)     # línea de cierre (CLV): entre 14 y 1 min antes del kickoff
+CLOSE_LATE = dt.timedelta(minutes=1)
 KEEP_DAYS = 2                              # props de eventos más viejos se eliminan
 
 log = logging.getLogger("refresh_snapshot")
@@ -92,6 +94,45 @@ def due_slot(now: dt.datetime, slots: list[dict], meta: dict) -> dict | None:
     return None
 
 
+def due_closing(now: dt.datetime, slots: list[dict], meta: dict) -> dict | None:
+    """Jornada cuya línea de cierre toca capturar ahora (para el CLV del seguimiento)."""
+    done = set(meta.get("closings_done", [])) if meta.get("date") == now.astimezone(ET).date().isoformat() else set()
+    for s in slots:
+        if s["id"] not in done and s["kickoff"] - CLOSE_EARLY <= now <= s["kickoff"] - CLOSE_LATE:
+            return s
+    return None
+
+
+def capture_closing(now: dt.datetime, slot: dict) -> dict:
+    """Cierre barato: líneas de partido (3 créditos) + solo los mercados de jugador de las
+    selecciones registradas de esta jornada (1 crédito por mercado y partido)."""
+    import tracking
+    events = _upcoming_today_events(now)
+    kick = slot["kickoff"].astimezone(dt.timezone.utc)
+    start = pd.to_datetime(events["commence_time"], utc=True) if not events.empty else pd.Series(dtype=object)
+    slot_ids = set(events.loc[(start - kick).abs() <= pd.Timedelta(SLOT_GAP), "id"]) if not events.empty else set()
+    game_odds = op.fetch_game_odds()
+    game_odds = game_odds[game_odds["event_id"].isin(slot_ids)]
+    frames = []
+    for event_id, markets in tracking.closing_markets(slot_ids).items():
+        try:
+            data = op._get(f"/sports/{op.SPORT}/events/{event_id}/odds", regions="us",
+                           markets=",".join(sorted(markets)), oddsFormat="american")
+            frames.append(op._frame(op.flatten_event(data)))
+        except op.OddsAPIError as exc:
+            log.warning("Cierre de %s no disponible: %s", event_id, exc)
+    props = pd.concat(frames, ignore_index=True) if frames else op._frame([])
+    n = tracking.record_closing(game_odds, props, slot_ids, now)
+    meta = _read_meta()
+    today = now.astimezone(ET).date().isoformat()
+    done = meta.get("closings_done", []) if meta.get("date") == today else []
+    meta.update(date=meta.get("date", today), closings_done=sorted(set(done) | {slot["id"]}),
+                credits_remaining=op.QUOTA.get("remaining"))
+    (OUT_DIR / "meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    return {"closing_slot": slot["id"], "picks_with_clv": n, "events": len(slot_ids),
+            "credits_remaining": op.QUOTA.get("remaining")}
+
+
 # --------------------------------------------------------------------------- #
 # Descarga y guardado
 # --------------------------------------------------------------------------- #
@@ -139,6 +180,7 @@ def refresh(now: dt.datetime, slot: dict | None) -> dict:
         "slot": slot["id"] if slot else "manual",
         "slot_games": slot["games"] if slot else [],
         "slots_done": slots_done,
+        "closings_done": prev.get("closings_done", []) if prev.get("date") == today else [],
         "events_refreshed": int(len(events)),
         "events_failed": failed,
         "game_odds_rows": int(len(game_odds)),
@@ -184,6 +226,20 @@ def main() -> int:
         print("  Hoy no hay partidos NFL.")
 
     slot = due_slot(now, slots, meta)
+    closing = None if (slot or args.force) else due_closing(now, slots, meta)
+    if closing and not args.dry_run:
+        try:
+            res = capture_closing(now, closing)
+            print(json.dumps(res, ensure_ascii=False))
+            _gh_output(changed="true", slot=f"cierre_{closing['id'].replace(' ', '_')}")
+        except op.OddsAPIError as exc:
+            print(f"ERROR cierre The-Odds-API: {exc}")
+            _gh_output(changed="false")
+        return 0
+    if closing:
+        print(f"Tocaría capturar la línea de cierre de la jornada {closing['id']}")
+        _gh_output(changed="false")
+        return 0
     if not (slot or args.force):
         print("Nada que hacer ahora (0 créditos).")
         _gh_output(changed="false")

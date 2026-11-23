@@ -44,12 +44,12 @@ TRACK_DIR = Path(__file__).parent / "tracking"
 PICKS_FILE = TRACK_DIR / "picks.csv"
 SLOT_HORIZON = dt.timedelta(minutes=100)   # partidos de la jornada: empiezan en < 100 min
 MAX_SINGLES = 12                           # sencillas por jornada (las de mayor EV)
-SINGLE_MAX_ODDS = 4.0                      # sin "loterías" en sencillas
+SINGLE_MAX_ODDS = 2.50                     # backtest: sin ventaja por encima de 2.50
 VOID_AFTER = dt.timedelta(days=6)          # sin datos tras 6 días -> anulada (no jugó / no publicado)
 
 COLUMNS = ["pick_id", "logged_at", "slot", "kind", "tier", "game_date", "events", "label", "n_legs",
            "decimal_odds", "prob_pct", "mc_prob_pct", "implied_prob_pct", "ev_pct", "legs",
-           "status", "legs_result", "graded_at", "profit"]
+           "status", "legs_result", "graded_at", "profit", "closing_odds", "clv_pct", "closing_at"]
 
 log = logging.getLogger("tracking")
 
@@ -62,8 +62,11 @@ def load_picks(path: Path | None = None) -> pd.DataFrame:
     try:
         df = pd.read_csv(path, dtype={"pick_id": str})
     except (OSError, ValueError, pd.errors.EmptyDataError):
-        return pd.DataFrame(columns=COLUMNS)
-    return df.reindex(columns=COLUMNS)
+        return pd.DataFrame(columns=COLUMNS).astype(object)
+    df = df.reindex(columns=COLUMNS)
+    text = ["status", "legs_result", "graded_at", "closing_at", "slot", "tier", "kind", "events", "label", "legs"]
+    df[text] = df[text].astype(object)                 # columnas vacías no deben quedar como float
+    return df
 
 
 def save_picks(df: pd.DataFrame, path: Path | None = None) -> None:
@@ -132,7 +135,7 @@ def select_picks(legs: list[bb.Leg], weekly: pd.DataFrame, info: dict[str, dict]
     for leg in legs:
         if leg.kind == "player" and not is_main_market(leg.market):
             continue
-        if not (pe.MIN_EDGE_PCT <= leg.ev_pct <= pe.MAX_CREDIBLE_EV) or leg.decimal_odds > SINGLE_MAX_ODDS:
+        if not leg.plus_ev or leg.decimal_odds > SINGLE_MAX_ODDS:
             continue
         key = leg.unique_key
         if key not in best or leg.ev_pct > best[key].ev_pct:
@@ -197,6 +200,84 @@ def log_slot_picks(now: dt.datetime, slot: str, game_odds: pd.DataFrame, props: 
         return 0
     save_picks(pd.concat([old, new], ignore_index=True) if not old.empty else new)
     return len(new)
+
+
+# --------------------------------------------------------------------------- #
+# CLV: cuota tomada vs línea de cierre (~10 min antes del kickoff)
+# --------------------------------------------------------------------------- #
+def closing_markets(event_ids: set[str]) -> dict[str, set[str]]:
+    """Mercados de jugador que hacen falta al cierre, por evento (solo los de selecciones registradas)."""
+    picks = load_picks()
+    need: dict[str, set[str]] = {}
+    for r in picks[picks["closing_at"].isna()].itertuples(index=False):
+        for leg in json.loads(r.legs):
+            if leg.get("event_id") in event_ids and leg.get("kind") == "player":
+                need.setdefault(leg["event_id"], set()).add(leg["market"])
+    return need
+
+
+def _close_prob(leg: dict, game_odds: pd.DataFrame, props: pd.DataFrame) -> tuple[float | None, float | None]:
+    """(prob. sin vig de cierre del lado apostado, cuota mediana de cierre) a la MISMA línea."""
+    if leg["kind"] == "team":
+        df = game_odds[(game_odds["event_id"] == leg["event_id"]) & (game_odds["market"] == leg["market"])]
+        if df.empty:
+            return None, None
+        if leg["market"] == "totals":
+            df = df[df["line"] == leg["line"]]
+            mine = df[df["outcome"].str.lower() == leg["side"]]
+            other = df[df["outcome"].str.lower() != leg["side"]]
+        else:
+            df = df.assign(abbr=df["outcome"].map(TEAM_ABBR))
+            mine = df[df["abbr"] == leg["side"]]
+            if leg["market"] == "spreads":
+                mine = mine[mine["line"] == leg["line"]]
+                other = df[(df["abbr"] != leg["side"]) & (df["line"] == -leg["line"])]
+            else:
+                other = df[df["abbr"] != leg["side"]]
+    else:
+        df = props[(props["event_id"] == leg["event_id"]) & (props["market"] == leg["market"])
+                   & (props["player"] == leg["player"]) & (props["line"] == leg["line"])]
+        mine = df[df["outcome"].str.lower() == leg["side"]]
+        other = df[df["outcome"].str.lower() != leg["side"]]
+    if mine.empty:
+        return None, None
+    o_m = float(mine["decimal_odds"].median())
+    o_o = float(other["decimal_odds"].median()) if not other.empty else None
+    return pe.no_vig_prob(o_m, o_o), o_m
+
+
+def record_closing(game_odds: pd.DataFrame, props: pd.DataFrame, event_ids: set[str],
+                   now: dt.datetime | None = None) -> int:
+    """Guarda la cuota de cierre y el CLV de cada selección de esos partidos.
+
+    CLV % = p_cierre_sin_vig × cuota_tomada − 1: el EV de tu apuesta medido contra
+    la línea final del mercado (la mejor estimación de la probabilidad real). En
+    combinadas se multiplican las patas. Positivo de forma sostenida = ventaja real.
+    """
+    now = now or dt.datetime.now(dt.timezone.utc)
+    picks = load_picks()
+    todo = picks[picks["closing_at"].isna() & picks["events"].fillna("").apply(
+        lambda e: bool(set(str(e).split(";")) & event_ids))]
+    done = 0
+    for idx, r in todo.iterrows():
+        legs = json.loads(r["legs"])
+        factors, close_odds = [], []
+        for leg in legs:
+            p, o = _close_prob(leg, game_odds, props)
+            if p is None:
+                factors = None
+                break
+            factors.append(p * float(leg["decimal_odds"]))
+            close_odds.append(o)
+        if not factors:
+            continue
+        picks.loc[idx, ["closing_odds", "clv_pct", "closing_at"]] = [
+            round(float(np.prod(close_odds)), 3), round((float(np.prod(factors)) - 1) * 100, 2),
+            now.isoformat(timespec="seconds")]
+        done += 1
+    if done:
+        save_picks(picks)
+    return done
 
 
 # --------------------------------------------------------------------------- #
@@ -297,7 +378,8 @@ def summarize(picks: pd.DataFrame | None = None) -> pd.DataFrame:
         return pd.DataFrame()
     picks = picks.assign(profit=pd.to_numeric(picks["profit"], errors="coerce"),
                          prob_pct=pd.to_numeric(picks["prob_pct"], errors="coerce"),
-                         ev_pct=pd.to_numeric(picks["ev_pct"], errors="coerce"))
+                         ev_pct=pd.to_numeric(picks["ev_pct"], errors="coerce"),
+                         clv_pct=pd.to_numeric(picks["clv_pct"], errors="coerce"))
     rows = []
     for name, g in [*((t, picks[picks["tier"] == t]) for t in GROUP_ORDER), ("TOTAL", picks)]:
         if g.empty:
@@ -313,7 +395,10 @@ def summarize(picks: pd.DataFrame | None = None) -> pd.DataFrame:
                      "prob_esperada_pct": round(float(settled["prob_pct"].mean()), 1) if n else None,
                      "ev_esperado_pct": round(float(settled["ev_pct"].mean()), 1) if n else None,
                      "unidades": round(profit, 2),
-                     "roi_pct": round(profit / n * 100, 1) if n else None})
+                     "roi_pct": round(profit / n * 100, 1) if n else None,
+                     "clv_medio_pct": round(float(g["clv_pct"].mean()), 2) if g["clv_pct"].notna().any() else None,
+                     "clv_positivo_pct": round(float((g["clv_pct"] > 0).mean() * 100), 1)
+                     if g["clv_pct"].notna().any() else None})
     return pd.DataFrame(rows)
 
 

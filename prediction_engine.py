@@ -7,6 +7,9 @@ from __future__ import annotations
 
 from typing import Iterable
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -317,6 +320,7 @@ MIN_EDGE_PCT = 3.0           # +EV solo si EV ajustado >= 3% (colchón ante erro
 MAX_CREDIBLE_EV = 25.0       # EV mayor = "demasiado bueno": el mercado sabe algo (lesión, rol) -> revisar
 DISAGREE_SCALE = 1.0         # cuanto más discrepa el modelo del mercado (log-odds), menos peso tiene
 PROB_FLOOR, PROB_CEIL = 0.01, 0.97
+_DEFAULTS = {"MIN_EDGE_PCT": MIN_EDGE_PCT, "MAX_CREDIBLE_EV": MAX_CREDIBLE_EV}
 
 
 def _logit(p: float) -> float:
@@ -367,8 +371,98 @@ def blend_prob(model_prob: float, market_prob: float | None, weight: float = MOD
     return float(np.clip(p, PROB_FLOOR, PROB_CEIL))
 
 
+# --------------------------------------------------------------------------- #
+# Calibración con datos reales (backtest con cuotas históricas)
+#
+# `model_calibration.json` (lo escribe `python backtest.py fit`) trae, por
+# familia de mercado, una regresión logística ajustada con resultados reales:
+#     logit(p) = a · logit(p_mercado) + b · logit(p_MonteCarlo) + c
+# b/(a+b) es el peso real del modelo; c corrige su sesgo (ej. sobrestima Overs).
+# Se ajusta sobre el lado "Over"/"Sí" y el Under es el complemento, así ambos
+# lados siempre suman 100%. Sin calibración para una familia se usa la mezcla fija.
+# --------------------------------------------------------------------------- #
+CALIBRATION_FILE = Path(__file__).parent / "model_calibration.json"
+CALIBRATION: dict = {}
+TEAM_FAMILIES = ("h2h", "spreads", "totals")
+_TUNABLE = {"min_edge_pct": "MIN_EDGE_PCT", "max_credible_ev": "MAX_CREDIBLE_EV"}
+
+
+def set_calibration(cal: dict | None) -> dict:
+    """Activa una calibración (o ninguna) y aplica sus umbrales globales."""
+    global CALIBRATION
+    CALIBRATION = dict(cal or {})
+    g = globals()
+    for key, name in _TUNABLE.items():
+        g[name] = float(CALIBRATION.get(key, _DEFAULTS[name]))
+    return CALIBRATION
+
+
+def load_calibration(path: Path | None = None) -> dict:
+    try:
+        cal = json.loads(Path(path or CALIBRATION_FILE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        cal = {}
+    return set_calibration(cal)
+
+
+def family_of(kind: str, market: str | None, stat: str | None) -> str | None:
+    """Familia de calibración: columna de stat para jugadores (ej. receiving_yards), mercado para equipos."""
+    return market if kind == "team" else stat
+
+
+def adjusted_prob(model_prob: float, market_prob: float | None, family: str | None = None,
+                  side: str = "over", n_games: int | None = None,
+                  weight: float | None = None) -> tuple[float, float]:
+    """Probabilidad AJUSTADA y peso efectivo del modelo.
+
+    Con calibración de la familia: regresión logística ajustada con resultados
+    reales. El peso del Monte Carlo se reduce si el jugador tiene < 10 partidos.
+    Sin calibración: mezcla lineal fija con penalización por discrepancia.
+    """
+    cal = (CALIBRATION.get("families") or {}).get(family) if family else None
+    if cal and market_prob is not None:
+        flip = str(side).lower() == "under"
+        m, k = (1 - model_prob, 1 - market_prob) if flip else (model_prob, market_prob)
+        frac = 1.0 if n_games is None else min(1.0, max(n_games, 0) / REALISM_GAMES)
+        b = float(cal["b"]) * frac
+        a = float(cal["a"]) + float(cal["b"]) * (1 - frac)
+        z = a * _logit(k) + b * _logit(m) + float(cal.get("c", 0.0))
+        p = 1 / (1 + np.exp(-z))
+        p = 1 - p if flip else p
+        w = b / (a + b) if a + b > 0 else 0.0
+        return float(np.clip(p, PROB_FLOOR, PROB_CEIL)), float(np.clip(w, 0, 1))
+    w = MODEL_WEIGHT if weight is None else weight
+    return blend_prob(model_prob, market_prob, w), effective_weight(model_prob, market_prob, w)
+
+
+def family_validated(family: str | None) -> bool:
+    """¿El backtest comprobó ventaja real en esta familia? Sin calibración cargada: sí (modo antiguo)."""
+    validated = CALIBRATION.get("validated_families")
+    if validated is None:
+        return True
+    return bool(family) and family in validated
+
+
+def ev_status(ev_pct: float | None, family: str | None = None) -> str | None:
+    """'plus' (+EV comprobado) · 'unvalidated' (EV alto en mercado sin ventaja comprobada) ·
+    'suspicious' (EV irreal) · 'neg'."""
+    if ev_pct is None or pd.isna(ev_pct):
+        return None
+    if ev_pct > MAX_CREDIBLE_EV:
+        return "suspicious"
+    if ev_pct >= MIN_EDGE_PCT:
+        return "plus" if family_validated(family) else "unvalidated"
+    return "neg"
+
+
+def is_plus_ev(ev_pct: float | None, family: str | None = None) -> bool:
+    """+EV real: EV entre el umbral y el tope creíble, en una familia validada por el backtest."""
+    return ev_status(ev_pct, family) == "plus"
+
+
 def prop_edge(model_prob: float, decimal_odds: float, market_prob: float | None = None,
-              weight: float = MODEL_WEIGHT) -> dict:
+              weight: float = MODEL_WEIGHT, family: str | None = None, side: str = "over",
+              n_games: int | None = None) -> dict:
     """Ventaja de una selección con probabilidad AJUSTADA (modelo + mercado).
 
     Ej.: cuota 1.85 (sin vig ≈ 52%), Monte Carlo 60%, peso 0.5 -> ajustada 56%:
@@ -377,7 +471,7 @@ def prop_edge(model_prob: float, decimal_odds: float, market_prob: float | None 
     """
     implied = implied_probability(decimal_odds)
     mkt = market_prob if market_prob is not None else no_vig_prob(decimal_odds)
-    p = blend_prob(model_prob, mkt, weight)
+    p, w = adjusted_prob(model_prob, mkt, family, side, n_games, weight)
     ev = expected_value_pct(p, decimal_odds)
     return {
         "decimal_odds": round(float(decimal_odds), 2),
@@ -388,9 +482,11 @@ def prop_edge(model_prob: float, decimal_odds: float, market_prob: float | None 
         "edge_pct": round(p * 100 - implied, 2),
         "ev_pct": ev,
         "fair_odds": round(1 / p, 2) if p > 0 else None,
-        "is_plus_ev": bool(MIN_EDGE_PCT <= ev <= MAX_CREDIBLE_EV),
+        "is_plus_ev": is_plus_ev(ev, family),
+        "status": ev_status(ev, family),
         "suspicious": bool(ev > MAX_CREDIBLE_EV),
-        "weight": round(effective_weight(model_prob, mkt, weight), 2),
+        "weight": round(w, 2),
+        "calibrated": bool(family and family in (CALIBRATION.get("families") or {})),
     }
 
 
@@ -408,8 +504,8 @@ def evaluate_prop_lines(sims: np.ndarray, lines: pd.DataFrame,
     for col in ("over", "under"):
         if col not in out:
             out[col] = np.nan
+    n_hist = len(_extract_values(player_stats, stat_col, REALISM_GAMES)) if player_stats is not None else None
     if weight is None:
-        n_hist = len(_extract_values(player_stats, stat_col, REALISM_GAMES)) if player_stats is not None else None
         weight = model_weight(n_hist)
     rows = []
     for r in out.itertuples(index=False):
@@ -420,15 +516,17 @@ def evaluate_prop_lines(sims: np.ndarray, lines: pd.DataFrame,
             mc = probability_from_sims(sims, r.line, side)
             odds, other_odds = getattr(r, side), getattr(r, other)
             mkt = no_vig_prob(odds, other_odds)
-            p = blend_prob(mc, mkt, weight)
+            p, _ = adjusted_prob(mc, mkt, stat_col, side, n_hist, weight)
             row[f"{side}_mc_pct"] = round(mc * 100, 2)
             row[f"{side}_prob_pct"] = round(p * 100, 2)
             row[f"{side}_fair"] = round(1 / p, 2) if p > 0 else None
             if guard_ok and odds is not None and not pd.isna(odds) and odds > 1:
-                edge = prop_edge(mc, float(odds), mkt, weight)
+                edge = prop_edge(mc, float(odds), mkt, weight, stat_col, side, n_hist)
                 row[f"{side}_ev_pct"], row[f"{side}_plus_ev"] = edge["ev_pct"], edge["is_plus_ev"]
+                row[f"{side}_status"] = edge["status"]
             else:
                 row[f"{side}_ev_pct"], row[f"{side}_plus_ev"] = None, False
+                row[f"{side}_status"] = None
         rows.append(row)
     return pd.concat([out.reset_index(drop=True), pd.DataFrame(rows)], axis=1)
 
@@ -437,7 +535,7 @@ def evaluate_manual_prop(line: float, decimal_odds: float, player_stats=None,
                          stat_col: str | None = None, side: str = "over",
                          sims: np.ndarray | None = None, n: int = N_SIMULATIONS,
                          seed: int | None = None, market_prob: float | None = None,
-                         weight: float | None = None) -> dict:
+                         weight: float | None = None, family: str | None = None) -> dict:
     """Consulta manual: línea + cuota decimal pura -> prob. implícita, prob. Monte
     Carlo, prob. AJUSTADA (modelo + mercado sin vig) y % EV sobre la ajustada.
     Pasa siempre por el Realism Guard cuando hay historial; una línea rechazada
@@ -466,12 +564,12 @@ def evaluate_manual_prop(line: float, decimal_odds: float, player_stats=None,
     if sims is None:
         raise ValueError("Se necesita player_stats o sims para estimar la probabilidad real")
 
+    n_hist = (len(_extract_values(player_stats, stat_col, REALISM_GAMES))
+              if player_stats is not None and stat_col is not None else None)
     if weight is None:
-        n_hist = (len(_extract_values(player_stats, stat_col, REALISM_GAMES))
-                  if player_stats is not None and stat_col is not None else None)
         weight = model_weight(n_hist)
     p = probability_from_sims(sims, line, side)
-    edge = prop_edge(p, decimal_odds, market_prob, weight)
+    edge = prop_edge(p, decimal_odds, market_prob, weight, family or stat_col, side, n_hist)
     ev = edge["ev_pct"]
     result.update({
         "real_prob_pct": edge["model_prob_pct"],     # ajustada
@@ -484,8 +582,11 @@ def evaluate_manual_prop(line: float, decimal_odds: float, player_stats=None,
         "fair_odds": edge["fair_odds"],
         "projection_mean": round(float(np.mean(sims)), 1),
         "projection_median": round(float(np.median(sims)), 1),
-        "verdict": ("+EV" if edge["is_plus_ev"] else "⚠️ Revisar (EV irreal)" if edge["suspicious"]
-                    else "EV marginal" if ev > 0 else "-EV"),
+        "calibrated": edge["calibrated"],
+        "status": edge["status"],
+        "verdict": {"plus": "+EV", "suspicious": "⚠️ Revisar (EV irreal)",
+                    "unvalidated": "EV sin ventaja comprobada"}.get(edge["status"],
+                                                                      "EV marginal" if ev > 0 else "-EV"),
     })
     return result
 
@@ -559,7 +660,8 @@ def evaluate_props_board(props: pd.DataFrame, weekly: pd.DataFrame,
             else:
                 mkt = row["market_prob"] if not pd.isna(row["market_prob"]) else None
                 res = evaluate_manual_prop(row["line"], row["decimal_odds"], values, hist_stat,
-                                           side=row["outcome"], sims=sims, market_prob=mkt, weight=weight)
+                                           side=row["outcome"].lower(), sims=sims, market_prob=mkt,
+                                           weight=weight, family=stat)
                 res["realism_reason"] = res.pop("realism")["reason"]
             res["_idx"] = idx
             results.append(res)
@@ -568,3 +670,6 @@ def evaluate_props_board(props: pd.DataFrame, weekly: pd.DataFrame,
             "is_plus_ev", "projection_mean", "verdict", "realism_reason"]
     res_df = pd.DataFrame(results).reindex(columns=keep).set_index("_idx")
     return board.join(res_df).sort_values("ev_pct", ascending=False, na_position="last")
+
+
+load_calibration()

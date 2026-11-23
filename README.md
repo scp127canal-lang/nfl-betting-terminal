@@ -41,12 +41,13 @@ Terminal de analítica para apuestas de la NFL que busca **valor esperado positi
 - Campo **🎯 Cuota Real Ajustada** para meter la cuota que de verdad ofrece la casa en combinadas del mismo partido. El EV y el pago se recalculan con ella.
 
 **Salvaguardas del modelo**
-- **Probabilidad ajustada**: el EV no usa el Monte Carlo puro. Lo mezcla con la probabilidad del mercado sin margen (*no-vig*):
-  - Props de jugador: 50% modelo / 50% mercado, con menos peso para el modelo si el jugador tiene menos de 10 partidos.
-  - Moneyline, spread y total: 30% modelo. Primer TD: 30% modelo.
-  - Cuanto más discrepa el modelo del mercado, menos peso tiene. Una discrepancia enorme suele ser información que el modelo no ve (lesión, cambio de rol).
-- **Umbral +EV**: solo cuenta como valor un EV de **3% a 25%**. Por encima de 25% se marca `⚠️ Revisar`: casi siempre es un error del modelo, no una oportunidad.
-- **Combinadas**: la correlación simulada entre patas se aplica amortiguada (raíz del *lift*), y se descartan las combinadas con EV > 100%.
+- **Probabilidad calibrada con resultados reales** (`model_calibration.json`, ver *Backtest*). Por cada mercado, una regresión logística ajustada con cuotas históricas decide cuánto pesa el Monte Carlo frente al mercado sin margen y corrige su sesgo:
+  - *Modelo + mercado*: el Monte Carlo sí aportó información (ej. recepciones).
+  - *Mercado + corrección de sesgo*: el modelo no aportó, pero el mercado tiene un sesgo medible (ej. los Overs de yardas de carrera se cumplen menos de lo que pagan).
+  - *Solo mercado*: el modelo empeoraba la predicción.
+  - Mercados sin datos históricos usan la mezcla fija de respaldo: 50% modelo en props, 30% en equipos, con penalización si discrepa mucho del mercado.
+- **+EV solo en mercados validados**: cuenta como `🟢 +EV` un EV entre el umbral y el tope (elegidos por el backtest), y solo en mercados que ganaron dinero fuera de muestra. En el resto, un EV alto se marca `🟡 sin ventaja comprobada`, y por encima del tope `⚠️ Revisar`.
+- **Combinadas**: correlación entre patas calibrada con 33,000 parejas reales del mismo partido. Las patas salen solo de mercados validados.
 - **Realism Guard**: rechaza líneas más de un 15% por encima del máximo del jugador en sus últimos 10 partidos.
 - Distribución **Gamma cero-inflada** para yardas y **Poisson / Binomial negativa** para conteos (TDs, recepciones, INT…).
 
@@ -64,7 +65,10 @@ Terminal de analítica para apuestas de la NFL que busca **valor esperado positi
 | `bet_builder.py` | Patas, correlaciones, simulación conjunta, niveles de riesgo, Kelly |
 | `scheduler.py` | Lectura del snapshot de cuotas; descarga local opcional a las 8 AM (`LOCAL_SCHEDULER=1`) |
 | `refresh_snapshot.py` | Descarga de cuotas antes de cada jornada (GitHub Actions) |
-| `tracking.py` | Registro y calificación de las selecciones del modelo (`tracking/picks.csv`) |
+| `tracking.py` | Registro, CLV y calificación de las selecciones del modelo (`tracking/picks.csv`) |
+| `backtest.py` | Descarga de cuotas históricas con tope de créditos (caché en `backtest/raw/`) |
+| `backtest_eval.py` | Backtest punto-en-el-tiempo, calibración y validación fuera de muestra |
+| `model_calibration.json` | Parámetros calibrados que usa la app (lo genera `backtest.py fit`) |
 | `main.py` | API FastAPI y chat con Gemini |
 | `run.py` | Arranca la API y Streamlit juntos |
 | `config.py` | Variables de entorno, paleta de colores, `american_to_decimal` |
@@ -167,7 +171,43 @@ Para saber si el +EV se convierte en ganancias reales:
 
 Con menos de ~100–200 selecciones, el ROI es sobre todo varianza. La señal útil es que el acierto real se parezca a la probabilidad esperada (calibración).
 
+**CLV (*Closing Line Value*)**: ~10 min antes de cada kickoff, el workflow descarga la línea de cierre, pero solo de los mercados de las selecciones registradas (~3 créditos más ~3 por partido). Con ella calcula `CLV % = p_cierre_sin_vig × cuota_tomada − 1`.
+- Si la cuota no se mueve, el CLV es ≈ −margen de la casa.
+- Un CLV medio que mejora y supera 0% en 50+ selecciones es la señal más rápida de ventaja real, mucho antes que el ROI.
+
 Local: `python tracking.py grade` · `python tracking.py summary`.
+
+## Backtest con cuotas históricas
+
+`backtest.py` usa los endpoints históricos de The-Odds-API (planes de pago):
+- Lista de partidos: 1 crédito.
+- Líneas de partido: 30 créditos por jornada.
+- Props: 10 créditos por mercado y partido.
+
+Las respuestas se guardan en `backtest/raw/` y nunca se vuelven a pagar.
+
+```bash
+python backtest.py fetch --budget 8000   # descarga con tope de créditos
+python backtest.py run                   # selecciones punto-en-el-tiempo + resultado real
+python backtest.py fit                   # calibra, valida y escribe model_calibration.json
+```
+
+- **Punto en el tiempo**: cada partido se evalúa con estadísticas de semanas anteriores y la cuota de ~1 h antes del kickoff, igual que en vivo.
+- **Validación fuera de muestra**: cada semana se predice con una calibración ajustada sin esa semana. Los mercados "validados" se eligen con la primera mitad de la temporada y se prueban en la segunda.
+- Resultados en la app: **📈 Rendimiento del modelo → 🧪 Backtest** (`backtest/report.json`).
+
+**Resultados (temporada 2026, semanas 1–11, 6,924 líneas, 7,952 créditos):**
+
+| | Log-loss fuera de muestra (menor = mejor) |
+|---|---|
+| Monte Carlo puro | 0.6379 (sobreconfiado: cuando dice 75%, se cumple ~55%) |
+| Mercado sin vig | 0.5864 |
+| **Probabilidad calibrada (la que usa la app)** | **0.5855** |
+
+- **Sencillas con EV ≥ 2%:** 1,118 apuestas, ROI fuera de muestra **+2.3%**. En la prueba ciega (semanas 6–11, mercados elegidos con 3–5) el ROI fue **+1.2%** (808 apuestas). Antes de calibrar era **−9.2%**.
+- **Ventaja comprobada:** yardas de carrera (+4.1%, sobre todo Unders). Los Overs en general perdieron (−3.3%).
+- **Combinadas:** la probabilidad conjunta está bien calibrada (Moderado: 31.3% esperado vs 32.0% real). El ROI de 52 combinadas todavía es ruido.
+- Es una sola temporada: los márgenes de error son de varios puntos. El seguimiento en vivo y el CLV confirmarán o descartarán la ventaja.
 
 > Como el bot hace commits, antes de subir cambios propios ejecuta `git pull`.
 

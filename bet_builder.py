@@ -25,6 +25,7 @@ from scipy.stats import norm
 
 from data_pipeline import TEAM_ABBR, get_player_game_log, normalize_name, team_points_log  # noqa: F401
 from odds_pipeline import MARKET_STAT_MAP, is_main_market, main_lines
+import prediction_engine as pe
 from prediction_engine import (
     MAX_CREDIBLE_EV, MIN_EDGE_PCT, MODEL_WEIGHT, MODEL_WEIGHT_TEAM, N_SIMULATIONS, REALISM_GAMES, blend_prob,
     expected_value_pct, implied_probability, market_probs, model_weight,
@@ -35,6 +36,24 @@ from prediction_engine import (
 # se conserva solo en parte: lift_ajustado = lift ** LIFT_WEIGHT. Conservador para SGP.
 LIFT_WEIGHT = 0.5
 MAX_CREDIBLE_PARLAY_EV = 100.0   # combinadas con EV mayor se descartan (casi siempre error del modelo)
+
+# Parámetros de combinadas que el backtest puede recalibrar (model_calibration.json -> "parlay")
+PARLAY_DEFAULTS = {
+    "lift_weight": LIFT_WEIGHT,
+    "max_parlay_ev": MAX_CREDIBLE_PARLAY_EV,
+    "player_min_prob": 0.40,
+    "player_max_odds": 3.00,
+    "player_min_odds": 1.40,
+    "team_min_prob": 0.35,
+    "min_leg_ev": -100.0,          # EV mínimo de cada pata (−100 = sin filtro)
+    "disabled_tiers": [],
+    "max_legs": 6,
+    "validated_only": True,        # patas solo de familias con ventaja comprobada en el backtest
+}
+
+
+def parlay_param(name: str):
+    return (pe.CALIBRATION.get("parlay") or {}).get(name, PARLAY_DEFAULTS[name])
 
 # --------------------------------------------------------------------------- #
 # Niveles de riesgo
@@ -137,12 +156,22 @@ class Leg:
         """Probabilidad AJUSTADA (Monte Carlo + mercado sin vig): la que decide el EV."""
         mkt = self.market_prob
         if mkt is None or (isinstance(mkt, float) and math.isnan(mkt)):
-            mkt = 1 / self.decimal_odds / 1.045 if self.decimal_odds > 1 else None
-        return blend_prob(self.model_prob, mkt, self.weight)
+            mkt = pe.no_vig_prob(self.decimal_odds)
+        n = len(self.history) if self.kind == "player" else None
+        p, _ = pe.adjusted_prob(self.model_prob, mkt, self.calib_family, self.side, n, self.weight)
+        return p
+
+    @property
+    def calib_family(self) -> str | None:
+        return pe.family_of(self.kind, self.market, self.stat)
 
     @property
     def ev_pct(self) -> float:
         return expected_value_pct(self.prob, self.decimal_odds)
+
+    @property
+    def plus_ev(self) -> bool:
+        return pe.is_plus_ev(self.ev_pct, self.calib_family)
 
     @property
     def implied_prob_pct(self) -> float:
@@ -493,7 +522,7 @@ def reprice_parlay(joint_probability: float, adjusted_odds: float, stake: float 
         "joint_prob_pct": round(p * 100, 2),
         "implied_prob_pct": implied_probability(adjusted_odds),
         "ev_pct": ev,
-        "is_plus_ev": ev >= MIN_EDGE_PCT,
+        "is_plus_ev": ev >= pe.MIN_EDGE_PCT,
         "stake": round(stake, 2),
         "payout": round(payout, 2),
         "net_profit": round(payout - stake, 2),
@@ -518,7 +547,7 @@ def adjusted_joint(model_joint: float, model_marginals, adjusted_marginals) -> t
     indep_model = float(np.prod(model_marginals))
     indep_adj = float(np.prod(adjusted_marginals))
     lift = model_joint / indep_model if indep_model > 0 else 1.0
-    p = indep_adj * lift ** LIFT_WEIGHT
+    p = indep_adj * lift ** float(parlay_param("lift_weight"))
     return float(np.clip(p, 0.0, min(adjusted_marginals))), indep_adj
 
 
@@ -590,17 +619,21 @@ def select_pool(legs: list[Leg], mode: str = "mixed", pool_size: int = 30) -> li
     """
     if mode not in PARLAY_MODES:
         raise ValueError(f"mode debe ser uno de {PARLAY_MODES}")
+    disabled = set(pe.CALIBRATION.get("disabled_families") or []) if parlay_param("validated_only") else set()
+    min_leg_ev = float(parlay_param("min_leg_ev"))
+    p_min, o_min, o_max = (float(parlay_param(k)) for k in ("player_min_prob", "player_min_odds",
+                                                             "player_max_odds"))
     best: dict[tuple, Leg] = {}
     for leg in legs:
-        if (leg.kind != "player" or not is_main_market(leg.market) or leg.prob < PLAYER_POOL_MIN_PROB
-                or leg.ev_pct > MAX_CREDIBLE_EV
-                or not PLAYER_POOL_MIN_ODDS <= leg.decimal_odds <= PLAYER_POOL_MAX_ODDS):
+        if (leg.kind != "player" or not is_main_market(leg.market) or leg.prob < p_min
+                or not min_leg_ev <= leg.ev_pct <= pe.MAX_CREDIBLE_EV or leg.calib_family in disabled
+                or not o_min <= leg.decimal_odds <= o_max):
             continue
         if leg.unique_key not in best or leg.ev_pct > best[leg.unique_key].ev_pct:
             best[leg.unique_key] = leg
     players = sorted(best.values(), key=lambda l: l.ev_pct, reverse=True)
-    teams = sorted((l for l in legs if l.kind == "team" and l.prob >= POOL_MIN_LEG_PROB
-                    and l.ev_pct <= MAX_CREDIBLE_EV),
+    teams = sorted((l for l in legs if l.kind == "team" and l.prob >= float(parlay_param("team_min_prob"))
+                    and min_leg_ev <= l.ev_pct <= pe.MAX_CREDIBLE_EV and l.calib_family not in disabled),
                    key=lambda l: l.ev_pct, reverse=True)
     if mode == "players":
         return players[:pool_size]
@@ -611,8 +644,8 @@ def select_pool(legs: list[Leg], mode: str = "mixed", pool_size: int = 30) -> li
 
 
 def build_parlays(legs: list[Leg], weekly: pd.DataFrame | None = None,
-                  min_legs: int = 2, max_legs: int = 6, pool_size: int = 30,
-                  beam_width: int = 300, min_ev: float = MIN_EDGE_PCT, top_n: int = 5,
+                  min_legs: int = 2, max_legs: int | None = None, pool_size: int = 30,
+                  beam_width: int = 300, min_ev: float | None = None, top_n: int = 5,
                   bankroll: float = 1000.0, n: int = N_SIMULATIONS,
                   seed: int | None = None, mode: str = "mixed") -> dict[str, list[dict]]:
     """Genera combinadas +EV de 2 a `max_legs` patas, agrupadas por riesgo.
@@ -624,6 +657,10 @@ def build_parlays(legs: list[Leg], weekly: pd.DataFrame | None = None,
     siguiente extiende las mejores `beam_width` combinadas (por EV y por
     probabilidad, para no sesgar hacia un solo nivel).
     """
+    min_ev = pe.MIN_EDGE_PCT if min_ev is None else min_ev
+    max_legs = int(parlay_param("max_legs")) if max_legs is None else max_legs
+    max_parlay_ev = float(parlay_param("max_parlay_ev"))
+    disabled_tiers = set(parlay_param("disabled_tiers") or [])
     pool = select_pool(legs, mode, pool_size)
     out = {tier: [] for tier in RISK_TIERS}
     if len(pool) < min_legs:
@@ -660,7 +697,7 @@ def build_parlays(legs: list[Leg], weekly: pd.DataFrame | None = None,
             scored.append((combo, p, ev))
             n_pl = int(is_player[list(combo)].sum())
             mixed_ok = mode != "mixed" or 0 < n_pl < len(combo)
-            if (size >= min_legs and mixed_ok and min_ev < ev * 100 <= MAX_CREDIBLE_PARLAY_EV
+            if (size >= min_legs and mixed_ok and min_ev < ev * 100 <= max_parlay_ev
                     and classify_risk(p, round(combo_odds, 2))):
                 found.append((combo, p))
 
@@ -672,7 +709,7 @@ def build_parlays(legs: list[Leg], weekly: pd.DataFrame | None = None,
     for combo, p in found:
         chosen = [pool[i] for i in combo]
         summary = _summarize(chosen, p, float(np.prod(adj[list(combo)])), bankroll)
-        if summary["tier"] and summary["ev_pct"] > min_ev:
+        if summary["tier"] and summary["tier"] not in disabled_tiers and summary["ev_pct"] > min_ev:
             out[summary["tier"]].append(summary)
 
     for tier in out:

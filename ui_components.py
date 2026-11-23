@@ -11,8 +11,10 @@ REGLA: toda cuota se muestra como número decimal puro (1.91), sin 'x' ni sufijo
 from __future__ import annotations
 
 import hmac
+import json
 import html
 import math
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -121,11 +123,15 @@ def badge_html(tier: str | None) -> str:
     return f'<span class="badge badge-{tier}">{info["emoji"]} {info["badge"]}</span>'
 
 
-def ev_badge(ev_pct, fair_odds=None, plus_ev: bool | None = None) -> str:
-    """🟢 +EV +8.4% · Fair Odds: 1.62  |  EV −3.1% · Fair 1.95."""
+def ev_badge(ev_pct, fair_odds=None, plus_ev: bool | None = None, status: str | None = None) -> str:
+    """🟢 +EV +8.4% · Fair Odds: 1.62  |  🟡 sin ventaja comprobada  |  EV −3.1% · Fair 1.95."""
     if _nan(ev_pct):
         return (f'<span class="evb evb-none">Fair Odds: {fmt_odds(fair_odds)}</span>'
                 if not _nan(fair_odds) else "")
+    if status == "unvalidated":
+        return (f'<span class="evb evb-warn" title="El modelo ve valor, pero en el backtest con cuotas '
+                f'históricas este mercado no ganó dinero. Trátalo como EV ≈ 0.">🟡 EV {ev_pct:+.1f}% · '
+                f'sin ventaja comprobada</span>')
     plus = pe.MIN_EDGE_PCT <= ev_pct <= pe.MAX_CREDIBLE_EV if plus_ev is None else plus_ev
     if not plus and ev_pct > pe.MAX_CREDIBLE_EV:
         return (f'<span class="evb evb-none" title="EV demasiado alto para ser real: el mercado probablemente '
@@ -754,6 +760,12 @@ div[class*="st-key-back"] button:hover {{ border-color: {GREEN}; color: {GREEN};
 .evb-pos {{ color: {GREEN}; background: rgba(0,255,135,.10); border: 1px solid rgba(0,255,135,.55);
   box-shadow: 0 0 12px rgba(0,255,135,.20); }}
 .evb-neg {{ color: {MUTED}; border: 1px solid {BORDER_HI}; }}
+.st-key-btmetrics [data-testid="stMetric"], .st-key-perfmetrics [data-testid="stMetric"] {{
+  background: #161B22 !important; border: 1px solid #21262D !important; border-radius: 8px !important;
+  padding: 10px 12px !important; min-height: 92px; text-align: center; }}
+.st-key-btmetrics [data-testid="stMetricLabel"] p, .st-key-perfmetrics [data-testid="stMetricLabel"] p {{
+  font-size: .72rem !important; white-space: nowrap; }}
+.evb-warn {{ color: #FFB020; background: rgba(255,176,32,.08); border: 1px solid rgba(255,176,32,.45); }}
 .evb-none {{ color: {MUTED}; border: 1px dashed {BORDER_HI}; }}
 .ev-cap {{ text-align: center; font-size: .7rem; margin-top: -4px; }}
 .ev-cap.pos {{ color: {GREEN}; }} .ev-cap.neg {{ color: {MUTED}; }}
@@ -970,6 +982,123 @@ def _tracking_data(mtime: float) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 STATUS_LABEL = {"won": "✅ Ganada", "lost": "❌ Perdida", "void": "➖ Anulada", "pending": "⏳ Pendiente"}
+BACKTEST_REPORT = Path(__file__).parent / "backtest" / "report.json"
+FAMILY_LABEL = {"receptions": "Recepciones", "receiving_yards": "Yds recepción", "rushing_yards": "Yds carrera",
+                "passing_yards": "Yds pase", "total_tds": "Anytime TD", "h2h": "Moneyline", "spreads": "Spread",
+                "totals": "Total partido", "passing_tds": "TD pase", "first_td": "Primer TD"}
+VARIANT_LABEL = {"completo": "Modelo + mercado", "sesgo": "Mercado + corrección de sesgo", "mercado": "Solo mercado"}
+
+
+@st.cache_data(show_spinner=False)
+def _backtest_report(mtime: float) -> dict:
+    return json.loads(BACKTEST_REPORT.read_text(encoding="utf-8"))
+
+
+def prob_method_text(res: dict, family: str | None, mkt_txt: str) -> str:
+    """Cómo se obtuvo la probabilidad ajustada, en palabras (según la calibración del backtest)."""
+    cal = (pe.CALIBRATION.get("families") or {}).get(family) if res.get("calibrated") else None
+    mc = f"Monte Carlo {res['mc_prob_pct']:.1f}%"
+    if not cal:
+        w = res.get("model_weight") or 0
+        return f"{w:.0%} {mc} + {1 - w:.0%} {mkt_txt} (mezcla fija: mercado sin backtest)"
+    variant = cal.get("variant")
+    if variant == "mercado":
+        return f"{mkt_txt} (backtest: el modelo no mejora al mercado aquí; {mc} solo como referencia)"
+    if variant == "sesgo":
+        return f"{mkt_txt} + corrección de sesgo medido en el backtest ({mc} solo como referencia)"
+    return f"{mkt_txt} + {mc} con peso {res.get('model_weight') or 0:.0%} calibrado en el backtest"
+
+
+def calibration_chart(report: dict) -> go.Figure:
+    """Prob. esperada vs frecuencia real (fuera de muestra). La diagonal = calibración perfecta."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=[0, 100], y=[0, 100], mode="lines", name="Calibración perfecta",
+                             line=dict(color="#30363D", width=1), hoverinfo="skip"))
+    series = (("calibracion_mc", "Monte Carlo puro", "#8B949E", "dash", "diamond"),
+              ("calibracion_ajustada", "Prob. ajustada (la que usa la app)", COLOR_NEON_GREEN, "solid", "circle"))
+    for key, name, color, dash, symbol in series:
+        rows = report.get(key) or []
+        fig.add_trace(go.Scatter(
+            x=[r["esperado_pct"] for r in rows], y=[r["real_pct"] for r in rows], name=name,
+            mode="lines+markers", line=dict(color=color, width=2, dash=dash),
+            marker=dict(size=9, symbol=symbol, color=color, line=dict(color="#0E1117", width=2)),
+            customdata=[r["n"] for r in rows],
+            hovertemplate=f"<b>{name}</b><br>Esperado %{{x:.1f}}% · Real %{{y:.1f}}%"
+                          "<br>%{customdata} líneas<extra></extra>"))
+    fig.update_layout(height=340, margin=dict(l=40, r=20, t=10, b=40), paper_bgcolor="rgba(0,0,0,0)",
+                      plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#C9D1D9"), hovermode="closest",
+                      legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0, font=dict(size=11)))
+    axis = dict(range=[0, 100], gridcolor="#21262D", zeroline=False, ticksuffix="%")
+    fig.update_xaxes(title_text="Probabilidad que dijo el modelo", **axis)
+    fig.update_yaxes(title_text="Frecuencia real", **axis)
+    return fig
+
+
+def render_backtest() -> None:
+    """Resultados del backtest con cuotas históricas (fuera de muestra)."""
+    try:
+        rep = _backtest_report(BACKTEST_REPORT.stat().st_mtime)
+    except (OSError, ValueError):
+        st.caption("Sin backtest todavía: `python backtest.py all --budget 8000`.")
+        return
+    cal = rep.get("calibracion", {})
+    single = rep.get("sencillas", {})
+    res, val = single.get("resultado", {}), rep.get("validacion", {})
+    comp = rep.get("comparacion", {})
+    weeks = rep.get("weeks", [])
+    st.caption(f"Temporada 2026, semanas {min(weeks)}–{max(weeks)} · {rep.get('n_lineas', 0):,} líneas "
+               "principales con la cuota de ~1 h antes del kickoff · cada semana se evaluó con un modelo que "
+               "NO la vio (validación fuera de muestra).")
+    with st.container(key="btmetrics"):
+        c1, c2, c3, c4 = st.columns(4, gap="small")
+        c1.metric("Sencillas +EV", f"{res.get('n', 0):,}", f"EV ≥ {single.get('umbral_elegido', 0):g}%",
+                  delta_color="off")
+        c2.metric("Acierto real", f"{res.get('acierto_pct') or 0:.1f}%",
+                  f"esperado {res.get('prob_media_pct') or 0:.1f}%", delta_color="off")
+        c3.metric("ROI fuera de muestra", f"{res.get('roi_pct') or 0:+.1f}%",
+                  f"{res.get('unidades', 0):+.1f} u", delta_color="off")
+        test = val.get("prueba_2a_mitad", {})
+        c4.metric("ROI prueba ciega", f"{test.get('roi_pct') or 0:+.1f}%",
+                  f"{test.get('n', 0)} apuestas · {val.get('prueba_semanas', '')}", delta_color="off")
+    mkt, adj = comp.get("mercado", {}), comp.get("calibrada", {})
+    mc = comp.get("monte_carlo", {})
+    st.markdown(
+        f"<div class='muted'>Precisión (log-loss, menor = mejor): Monte Carlo puro <b>{mc.get('log_loss', 0):.4f}</b>"
+        f" · mercado sin vig <b>{mkt.get('log_loss', 0):.4f}</b> · prob. ajustada <b>{adj.get('log_loss', 0):.4f}</b>. "
+        "El Monte Carlo solo está sobreconfiado; por eso la app ancla la probabilidad al mercado y solo usa el modelo "
+        "donde demostró aportar.</div>", unsafe_allow_html=True)
+    st.plotly_chart(calibration_chart(rep), width="stretch", config={"displayModeBar": False})
+
+    validated = set(cal.get("validated_families") or [])
+    roi_by_fam = {r["familia"]: r for r in single.get("por_familia", [])}
+    rows = []
+    for fam, f in (cal.get("families") or {}).items():
+        r = roi_by_fam.get(fam, {})
+        rows.append({"Mercado": FAMILY_LABEL.get(fam, fam), "Método": VARIANT_LABEL.get(f.get("variant"), ""),
+                     "Peso modelo": f"{f.get('model_weight', 0):.0%}", "Líneas": f.get("n"),
+                     "Apuestas +EV": r.get("n", 0), "ROI %": r.get("roi_pct"),
+                     "Estado": "🟢 Validado" if fam in validated else "⚪ Sin ventaja comprobada"})
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    side = {r["lado"]: r for r in single.get("por_lado", [])}
+    if side:
+        st.caption(" · ".join(f"{'Over' if k == 'over' else 'Under' if k == 'under' else 'Equipo'}: "
+                              f"{v['n']} apuestas, ROI {v['roi_pct']:+.1f}%" for k, v in side.items()))
+    parl = rep.get("combinadas") or {}
+    chosen = parl.get("variante_elegida")
+    if chosen:
+        names = {"BAJO": "🟢 Bajo", "MODERADO": "🟡 Moderado", "ALTO": "🔴 Alto", "TOTAL": "Total"}
+        prow = [{"Nivel": names.get(r["nivel"], r["nivel"]), "Combinadas": r["n"], "Acierto %": r["acierto_pct"],
+                 "Prob. esperada %": r["prob_media_pct"], "ROI %": r["roi_pct"],
+                 "ROI con recorte SGP 15% %": r["roi_recorte_sgp_pct"]}
+                for r in parl.get("variantes", {}).get(chosen, [])]
+        st.markdown("**Combinadas sugeridas en el backtest** "
+                    f"<span class='muted'>(regla elegida: {chosen.replace('_', ' ')})</span>", unsafe_allow_html=True)
+        st.dataframe(pd.DataFrame(prow), hide_index=True, width="stretch")
+        off = (cal.get("parlay") or {}).get("disabled_tiers") or []
+        if off:
+            st.caption("Niveles desactivados por perder en el backtest: " + ", ".join(names.get(t, t) for t in off))
+    st.caption("Muestra de una sola temporada: los ROI tienen margen de error de varios puntos. El seguimiento en "
+               "vivo y el CLV dirán si la ventaja se mantiene.")
 
 
 def render_performance() -> None:
@@ -979,51 +1108,65 @@ def render_performance() -> None:
         mtime = tracking.PICKS_FILE.stat().st_mtime
     except OSError:
         mtime = None
-    with st.expander("📈 Rendimiento del modelo (resultados reales)", expanded=False):
-        if mtime is None:
-            st.caption("Aún no hay selecciones registradas. Cada jornada, ~1 h antes del kickoff, GitHub Actions "
-                       "guarda las sencillas +EV y la mejor combinada de cada riesgo; al día siguiente se "
-                       "califican con los resultados reales de nflverse.")
-            return
-        picks, summary = _tracking_data(mtime)
-        total = summary[summary["grupo"] == "TOTAL"]
-        if total.empty:
-            st.caption("Sin selecciones registradas.")
-            return
-        t = total.iloc[0]
-        settled = int(t["ganadas"] + t["perdidas"])
-        with st.container(key="evalmetrics"):
-            c1, c2, c3, c4 = st.columns(4, gap="small")
-            c1.metric("Calificadas", f"{settled}", f"{int(t['pendientes'])} pendientes", delta_color="off")
-            c2.metric("Acierto real", "—" if t["acierto_pct"] is None or pd.isna(t["acierto_pct"])
-                      else f"{t['acierto_pct']:.1f}%",
-                      None if pd.isna(t["prob_esperada_pct"]) else f"esperado {t['prob_esperada_pct']:.1f}%",
-                      delta_color="off")
-            c3.metric("Unidades", f"{t['unidades']:+.2f} u")
-            c4.metric("ROI", "—" if pd.isna(t["roi_pct"]) else f"{t['roi_pct']:+.1f}%",
-                      None if pd.isna(t["ev_esperado_pct"]) else f"EV esperado {t['ev_esperado_pct']:+.1f}%",
-                      delta_color="off")
-        if settled < 50:
-            st.caption(f"⚠️ Muestra pequeña ({settled} calificadas): con menos de ~100–200 selecciones el ROI "
-                       "es sobre todo varianza. Lo importante es que el acierto real se acerque al esperado.")
-        names = {"SENCILLA": "Sencillas", "BAJO": "🟢 Bajo", "MODERADO": "🟡 Moderado", "ALTO": "🔴 Alto",
-                 "TOTAL": "Total"}
-        st.dataframe(summary.assign(grupo=summary["grupo"].map(names)).rename(columns={
-            "grupo": "Grupo", "selecciones": "Sel.", "pendientes": "Pend.", "ganadas": "G", "perdidas": "P",
-            "anuladas": "Anul.", "acierto_pct": "Acierto %", "prob_esperada_pct": "Prob. esperada %",
-            "ev_esperado_pct": "EV esperado %", "unidades": "Unidades", "roi_pct": "ROI %"}),
-            hide_index=True, width="stretch")
-        recent = picks.sort_values("logged_at", ascending=False).head(25)
-        st.dataframe(pd.DataFrame({
-            "Fecha": recent["game_date"], "Tipo": recent["tier"].map(names).fillna(recent["tier"]),
-            "Selección": recent["label"], "Cuota": pd.to_numeric(recent["decimal_odds"], errors="coerce"),
-            "Prob. %": pd.to_numeric(recent["prob_pct"], errors="coerce"),
-            "EV %": pd.to_numeric(recent["ev_pct"], errors="coerce"),
-            "Resultado": recent["status"].map(STATUS_LABEL).fillna("⏳ Pendiente"),
-            "Unidades": pd.to_numeric(recent["profit"], errors="coerce")}),
-            hide_index=True, width="stretch")
-        st.caption("Stake plano de 1 unidad por selección, a la cuota registrada ~1 h antes del partido "
-                   "(consenso de casas; en combinadas del mismo partido la casa real suele pagar menos).")
+    with st.expander("📈 Rendimiento del modelo", expanded=False):
+        t1, t2 = st.tabs(["🧪 Backtest (cuotas históricas)", "📡 Seguimiento en vivo"])
+        with t1:
+            render_backtest()
+        with t2:
+            _render_live(mtime)
+
+
+def _render_live(mtime: float | None) -> None:
+    if mtime is None:
+        st.caption("Aún no hay selecciones registradas. Cada jornada, ~1 h antes del kickoff, GitHub Actions "
+                   "guarda las sencillas +EV y la mejor combinada de cada riesgo; al día siguiente se "
+                   "califican con los resultados reales de nflverse.")
+        return
+    picks, summary = _tracking_data(mtime)
+    total = summary[summary["grupo"] == "TOTAL"]
+    if total.empty:
+        st.caption("Sin selecciones registradas.")
+        return
+    t = total.iloc[0]
+    settled = int(t["ganadas"] + t["perdidas"])
+    with st.container(key="perfmetrics"):
+        c1, c2, c3, c4 = st.columns(4, gap="small")
+        c1.metric("Calificadas", f"{settled}", f"{int(t['pendientes'])} pendientes", delta_color="off")
+        c2.metric("Acierto real", "—" if t["acierto_pct"] is None or pd.isna(t["acierto_pct"])
+                  else f"{t['acierto_pct']:.1f}%",
+                  None if pd.isna(t["prob_esperada_pct"]) else f"esperado {t['prob_esperada_pct']:.1f}%",
+                  delta_color="off")
+        c3.metric("Unidades", f"{t['unidades']:+.2f} u")
+        c4.metric("ROI", "—" if pd.isna(t["roi_pct"]) else f"{t['roi_pct']:+.1f}%",
+                  None if pd.isna(t["ev_esperado_pct"]) else f"EV esperado {t['ev_esperado_pct']:+.1f}%",
+                  delta_color="off")
+    if settled < 50:
+        st.caption(f"⚠️ Muestra pequeña ({settled} calificadas): con menos de ~100–200 selecciones el ROI "
+                   "es sobre todo varianza. Lo importante es que el acierto real se acerque al esperado.")
+    names = {"SENCILLA": "Sencillas", "BAJO": "🟢 Bajo", "MODERADO": "🟡 Moderado", "ALTO": "🔴 Alto",
+             "TOTAL": "Total"}
+    st.dataframe(summary.assign(grupo=summary["grupo"].map(names)).rename(columns={
+        "grupo": "Grupo", "selecciones": "Sel.", "pendientes": "Pend.", "ganadas": "G", "perdidas": "P",
+        "anuladas": "Anul.", "acierto_pct": "Acierto %", "prob_esperada_pct": "Prob. esperada %",
+        "ev_esperado_pct": "EV esperado %", "unidades": "Unidades", "roi_pct": "ROI %",
+        "clv_medio_pct": "CLV medio %", "clv_positivo_pct": "CLV > 0 %"}),
+        hide_index=True, width="stretch")
+    recent = picks.sort_values("logged_at", ascending=False).head(25)
+    st.dataframe(pd.DataFrame({
+        "Fecha": recent["game_date"], "Tipo": recent["tier"].map(names).fillna(recent["tier"]),
+        "Selección": recent["label"], "Cuota": pd.to_numeric(recent["decimal_odds"], errors="coerce"),
+        "Prob. %": pd.to_numeric(recent["prob_pct"], errors="coerce"),
+        "EV %": pd.to_numeric(recent["ev_pct"], errors="coerce"),
+        "Resultado": recent["status"].map(STATUS_LABEL).fillna("⏳ Pendiente"),
+        "Unidades": pd.to_numeric(recent["profit"], errors="coerce"),
+        "CLV %": pd.to_numeric(recent["clv_pct"], errors="coerce")}),
+        hide_index=True, width="stretch")
+    st.caption("CLV = EV de la cuota tomada medido contra la línea de cierre SIN margen (~10 min antes del "
+               "kickoff). Si la cuota no se mueve sale ≈ −3 a −6% (el margen de la casa); por encima de 0% le "
+               "ganaste al mercado. Es la señal más rápida: un CLV medio creciente en 50+ selecciones indica "
+               "ventaja real aunque el ROI todavía sea ruido.")
+    st.caption("Stake plano de 1 unidad por selección, a la cuota registrada ~1 h antes del partido "
+               "(consenso de casas; en combinadas del mismo partido la casa real suele pagar menos).")
 
 
 # =========================================================================== #
@@ -1079,7 +1222,7 @@ def render_game_card(game, proj: dict | None, best: dict[str, bb.Leg], source: s
                 if leg is None:
                     st.button("Sin línea", key=f"odds_{gid}_{market}", disabled=True, width="stretch")
                     continue
-                plus = pe.MIN_EDGE_PCT <= leg.ev_pct <= pe.MAX_CREDIBLE_EV
+                plus = leg.plus_ev
                 st.button(_market_button_label(leg), key=f"{'oddsev_' if plus else 'odds_'}{gid}_{market}",
                           width="stretch", on_click=add_to_slip, args=([leg],),
                           help=f"Prob. ajustada {leg.prob:.1%} (Monte Carlo {leg.model_prob:.1%} + mercado) · "
@@ -1195,7 +1338,7 @@ def _side_cell(row, side: str) -> str:
     odds = getattr(row, side)
     prob = getattr(row, f"{side}_prob_pct")
     badge = ev_badge(getattr(row, f"{side}_ev_pct"), getattr(row, f"{side}_fair"),
-                     getattr(row, f"{side}_plus_ev"))
+                     getattr(row, f"{side}_plus_ev"), getattr(row, f"{side}_status", None))
     mc = getattr(row, f"{side}_mc_pct", None)
     tip = f' title="Monte Carlo puro {mc:.1f}% · ajustada con el mercado {prob:.1f}%"' if mc is not None else ""
     return (f'<span class="odd">{fmt_odds(odds)}</span><span class="mc"{tip}>P {prob:.1f}%</span>{badge}')
@@ -1259,9 +1402,11 @@ def _render_td_board(props: pd.DataFrame, name: str, groups: list[str], weekly: 
         row = lines.loc[lines["line"] == 0.5] if not lines.empty else lines
         odds = float(row["over"].iloc[0]) if not row.empty and not pd.isna(row["over"].iloc[0]) else None
         if odds:
-            e = pe.prop_edge(mc, odds, pe.no_vig_prob(odds, row["under"].iloc[0]), w)
+            e = pe.prop_edge(mc, odds, pe.no_vig_prob(odds, row["under"].iloc[0]), w,
+                             family="first_td" if g == "first_td" else "total_tds", side="over",
+                             n_games=len(hist.tail(pe.REALISM_GAMES)))
             p = e["model_prob_pct"] / 100
-            badge = ev_badge(e["ev_pct"], e["fair_odds"], e["is_plus_ev"])
+            badge = ev_badge(e["ev_pct"], e["fair_odds"], e["is_plus_ev"], e["status"])
         else:
             p = mc
             badge = ev_badge(None, round(1 / p, 2) if p > 0 else None)
@@ -1425,7 +1570,7 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
 
         # --- Evaluación +EV de la selección activa (resumen único) ---
         res = pe.evaluate_manual_prop(line, odds, log, hist_stat, side=side.lower(), sims=sims,
-                                      market_prob=mkt_prob, weight=weight)
+                                      market_prob=mkt_prob, weight=weight, family=stat)
         with st.container(key="evalbox"):
             if res["verdict"] == "RECHAZADA":
                 st.error(f"🚫 Realism Guard: {res['realism']['reason']}")
@@ -1434,7 +1579,7 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
                         else f'{GROUP_LABEL[group]} · {side} <span class="mono">{line:g}</span>')
                 st.markdown(f'<div class="big-pick">{pick} @ <span class="mono">{fmt_odds(odds)}</span> '
                             f'<span class="muted">(cuota {odds_src})</span> '
-                            f'{ev_badge(res["ev_pct"], res["fair_odds"], res["is_plus_ev"])}</div>',
+                            f'{ev_badge(res["ev_pct"], res["fair_odds"], res["is_plus_ev"], res.get("status"))}</div>',
                             unsafe_allow_html=True)
                 with st.container(key="evalmetrics"):
                     e1, e2, e3, e4 = st.columns(4, gap="small")
@@ -1445,9 +1590,9 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
                 css = "verdict-pos" if res["is_plus_ev"] else "verdict-neg"
                 mkt_txt = (f"mercado sin vig {res['market_prob_pct']:.1f}%" if res.get("market_prob_pct") is not None
                            else "mercado estimado")
+                method = prob_method_text(res, stat, mkt_txt)
                 st.markdown(f"<div class='verdict-row'><span class='{css}'>{res['verdict']}</span> "
-                            f"<span class='muted'>· Prob. ajustada = {res['model_weight']:.0%} Monte Carlo "
-                            f"({res['mc_prob_pct']:.1f}%) + {1 - res['model_weight']:.0%} {mkt_txt} · "
+                            f"<span class='muted'>· Prob. ajustada {res['real_prob_pct']:.1f}% = {method} · "
                             f"EV = {res['real_prob_pct'] / 100:.4f} * {fmt_odds(odds)} - 1 · +EV desde "
                             f"{pe.MIN_EDGE_PCT:g}% · media {res['projection_mean']:g} · mediana "
                             f"{res['projection_median']:g} · Realism Guard OK (tope {res['realism']['threshold']:g})"
@@ -1523,6 +1668,16 @@ def render_parlay_mode_selector() -> str:
 def render_parlay_module(tiers: dict, legs_by_label: dict, bankroll: float, note: str = "") -> None:
     if note:
         st.caption(note)
+    validated = pe.CALIBRATION.get("validated_families")
+    if validated is not None and bb.parlay_param("validated_only"):
+        names = ", ".join(FAMILY_LABEL.get(f, f) for f in validated) or "ninguno"
+        st.caption(f"🧪 Solo se combinan mercados con ventaja comprobada en el backtest: **{names}**. "
+                   "La probabilidad conjunta está validada (esperado vs real dentro de ±1 punto); el resto de "
+                   "mercados se puede evaluar en la boleta, pero sin garantía de valor.")
+        if not any(tiers.values()):
+            st.info("Hoy no hay combinadas que cumplan las reglas validadas por el backtest en este modo. "
+                    "Prueba 👤 Solo Jugadores; si tampoco hay, es preferible no apostar a forzar una combinada "
+                    "sin ventaja.")
     cols = st.columns(3)
     for col, tier in zip(cols, ("BAJO", "MODERADO", "ALTO")):
         info = bb.RISK_TIERS[tier]
