@@ -1,0 +1,12 @@
+# Secretos (API keys de Gemini y The-Odds-API)
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Entorno virtual
+.venv/
+
+# Datos descargados en ejecución (cuotas y props cacheados)
+cache/
