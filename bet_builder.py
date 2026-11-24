@@ -236,13 +236,18 @@ def build_player_legs(props: pd.DataFrame, weekly: pd.DataFrame,
         stat = MARKET_STAT_MAP[row.market]
         if stat not in STAT_FAMILY:      # Primer TD: depende de todo el partido, no se combina
             continue
-        key = (normalize_name(row.player), stat)
+        key = (normalize_name(row.player), stat, row.event_id)
         if key not in cache:
             log = get_player_game_log(weekly, row.player, REALISM_GAMES)
             values = (pd.to_numeric(log[stat], errors="coerce").dropna().to_numpy(float)
                       if not log.empty else np.array([]))
             team = log["recent_team"].iloc[-1] if "recent_team" in log and not log.empty else None
-            sims = simulate_stat(values, stat, n=n, seed=seed) if len(values) else None
+            sims = None
+            if len(values):
+                home = getattr(row, "home_team", None)
+                away = getattr(row, "away_team", None)
+                sims = simulate_stat(pe.sim_values(weekly, row.player, stat), stat, n=n, seed=seed,
+                                     opp_factor=pe.matchup_factor(weekly, log, stat, home, away))
             cache[key] = (values, team, sims)
         values, team, sims = cache[key]
         if sims is None:

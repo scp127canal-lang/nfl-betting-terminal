@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from data_pipeline import TEAM_ABBR, get_player_game_log, team_td_log
+from data_pipeline import TEAM_ABBR, defense_factor, get_player_game_log, team_td_log
 from odds_pipeline import MARKET_STAT_MAP
 
 N_SIMULATIONS = 10_000
@@ -53,22 +53,66 @@ def _extract_values(player_stats, stat_col: str | None, n: int) -> np.ndarray:
     return values[-n:]
 
 
-def _weighted_moments(values: np.ndarray) -> tuple[float, float]:
+def _weighted_moments(values: np.ndarray, decay: float = RECENCY_DECAY) -> tuple[float, float]:
     """Media y varianza con más peso en los partidos recientes."""
-    w = RECENCY_DECAY ** np.arange(len(values))[::-1]
+    w = decay ** np.arange(len(values))[::-1]
     mean = float(np.average(values, weights=w))
     var = float(np.average((values - mean) ** 2, weights=w))
     return mean, max(var, (MIN_CV * mean) ** 2)
 
 
 # --------------------------------------------------------------------------- #
+# Parámetros del Monte Carlo entrenados (model_params.json, de model_tuning.py)
+# --------------------------------------------------------------------------- #
+HISTORY_GAMES = 17                 # historial máximo que se pasa al simulador (la ventana decide cuánto usa)
+MODEL_PARAMS_FILE = Path(__file__).parent / "model_params.json"
+SIM_PARAMS: dict = {}
+DEFAULT_SIM = {"window": REALISM_GAMES, "decay": RECENCY_DECAY, "disp": 1.0, "opp_beta": 0.0}
+
+
+def load_sim_params(path: Path | None = None) -> dict:
+    global SIM_PARAMS
+    try:
+        SIM_PARAMS = json.loads(Path(path or MODEL_PARAMS_FILE).read_text(encoding="utf-8")).get("families", {})
+    except (OSError, ValueError):
+        SIM_PARAMS = {}
+    return SIM_PARAMS
+
+
+def sim_params_for(stat_col: str | None) -> dict:
+    return {**DEFAULT_SIM, **(SIM_PARAMS.get(stat_col) or {})}
+
+
+def sim_values(weekly: pd.DataFrame, player: str, stat: str) -> np.ndarray:
+    """Historial que usa el simulador (hasta HISTORY_GAMES; la ventana entrenada decide cuántos)."""
+    log = get_player_game_log(weekly, player, HISTORY_GAMES)
+    if log.empty or stat not in log:
+        return np.array([])
+    return _extract_values(log, stat, HISTORY_GAMES)
+
+
+def matchup_factor(weekly: pd.DataFrame, log: pd.DataFrame, stat: str,
+                   home: str | None, away: str | None) -> float | None:
+    """Factor de la defensa rival para el jugador (None si el mercado no usa ajuste por rival)."""
+    if not sim_params_for(stat)["opp_beta"] or log is None or log.empty or "recent_team" not in log:
+        return None
+    team = log["recent_team"].iloc[-1]
+    h, a = TEAM_ABBR.get(home, home), TEAM_ABBR.get(away, away)
+    opp = a if team == h else h if team == a else None
+    pos = log["position_group"].iloc[-1] if "position_group" in log else None
+    return defense_factor(weekly, opp, pos, stat) if opp else None
+
+
+# --------------------------------------------------------------------------- #
 # Monte Carlo
 # --------------------------------------------------------------------------- #
 def simulate_yards(game_values: Iterable[float], n: int = N_SIMULATIONS,
-                   seed: int | None = None) -> np.ndarray:
+                   seed: int | None = None, window: int = REALISM_GAMES, decay: float = RECENCY_DECAY,
+                   disp: float = 1.0, mean_mult: float = 1.0) -> np.ndarray:
     """Yardas simuladas con una Gamma ajustada por momentos (no negativa y con
-    cola derecha, como las yardas reales)."""
-    values = _extract_values(game_values, None, REALISM_GAMES)
+    cola derecha, como las yardas reales). `disp` ensancha la distribución y
+    `mean_mult` ajusta la media (ej. defensa rival)."""
+    values = _extract_values(game_values, None, int(window))
     if len(values) == 0:
         raise ValueError("Sin historial para simular")
     rng = _rng(seed)
@@ -77,9 +121,10 @@ def simulate_yards(game_values: Iterable[float], n: int = N_SIMULATIONS,
     zero = values <= 0
     if zero.all():
         return np.zeros(n)
-    w = RECENCY_DECAY ** np.arange(len(values))[::-1]
+    w = decay ** np.arange(len(values))[::-1]
     p_zero = float(w[zero].sum() / w.sum())
-    mean, var = _weighted_moments(values[~zero])
+    mean, var = _weighted_moments(values[~zero], decay)
+    mean, var = mean * mean_mult, var * (mean_mult * disp) ** 2
     sims = rng.gamma(shape=mean ** 2 / var, scale=var / mean, size=n)
     if p_zero > 0:
         sims[rng.random(n) < p_zero] = 0.0
@@ -87,17 +132,19 @@ def simulate_yards(game_values: Iterable[float], n: int = N_SIMULATIONS,
 
 
 def simulate_count(game_values: Iterable[float], n: int = N_SIMULATIONS,
-                   seed: int | None = None, min_rate: float = 0.0) -> np.ndarray:
+                   seed: int | None = None, min_rate: float = 0.0, window: int = REALISM_GAMES,
+                   decay: float = RECENCY_DECAY, disp: float = 1.0, mean_mult: float = 1.0) -> np.ndarray:
     """Conteos discretos (TDs, INT, recepciones, intentos, acarreos).
 
     Binomial negativa si hay sobredispersión (var > media), Poisson si no.
     `min_rate` evita P = 0 exacto en TDs de jugadores sin anotaciones en L10.
     Ej.: P(2+ TD de pase) = media(sims >= 2) = media(sims > 1.5).
     """
-    values = _extract_values(game_values, None, REALISM_GAMES)
+    values = _extract_values(game_values, None, int(window))
     if len(values) == 0:
         raise ValueError("Sin historial para simular")
-    mean, var = _weighted_moments(values)
+    mean, var = _weighted_moments(values, decay)
+    mean, var = mean * mean_mult, var * (mean_mult * disp) ** 2
     rng = _rng(seed)
     mean = max(mean, min_rate)
     if mean <= 0:
@@ -108,18 +155,29 @@ def simulate_count(game_values: Iterable[float], n: int = N_SIMULATIONS,
     return rng.poisson(mean, size=n).astype(float)
 
 
+def simulate_stat_params(game_values, stat_col: str, window: int, decay: float, disp: float,
+                         mean_mult: float = 1.0, n: int = N_SIMULATIONS, seed: int | None = None) -> np.ndarray:
+    if stat_col in COUNT_STATS:
+        return simulate_count(game_values, n=n, seed=seed,
+                              min_rate=TD_MIN_RATE if stat_col in TD_STATS else 0.0,
+                              window=window, decay=decay, disp=disp, mean_mult=mean_mult)
+    return simulate_yards(game_values, n=n, seed=seed, window=window, decay=decay, disp=disp,
+                          mean_mult=mean_mult)
+
+
 simulate_receptions = simulate_count  # compatibilidad
 
 
 def simulate_stat(game_values, stat_col: str, n: int = N_SIMULATIONS,
-                  seed: int | None = None) -> np.ndarray:
-    """Despacha al modelo adecuado: Gamma cero-inflada (yardas) o Poisson/NB (conteos)."""
+                  seed: int | None = None, opp_factor: float | None = None) -> np.ndarray:
+    """Despacha al modelo adecuado: Gamma cero-inflada (yardas) o Poisson/NB (conteos),
+    con los parámetros entrenados de ese mercado (model_params.json) si existen.
+    `opp_factor`: lo que permite la defensa rival a esa posición vs la media de liga."""
     if stat_col == "first_td":
         raise ValueError("Primer TD necesita el contexto del partido: usa simulate_first_td")
-    if stat_col in COUNT_STATS:
-        return simulate_count(game_values, n=n, seed=seed,
-                              min_rate=TD_MIN_RATE if stat_col in TD_STATS else 0.0)
-    return simulate_yards(game_values, n=n, seed=seed)
+    p = sim_params_for(stat_col)
+    mult = float(opp_factor) ** p["opp_beta"] if opp_factor and p["opp_beta"] else 1.0
+    return simulate_stat_params(game_values, stat_col, p["window"], p["decay"], p["disp"], mult, n, seed)
 
 
 def simulate_first_td(player_td_values: Iterable[float], team_td_values: Iterable[float],
@@ -649,7 +707,10 @@ def evaluate_props_board(props: pd.DataFrame, weekly: pd.DataFrame,
                 away = TEAM_ABBR.get(rows["away_team"].iloc[0]) if "away_team" in rows else None
                 sims = first_td_sims(weekly, log, home, away, n=n, seed=seed)
             else:
-                sims = simulate_stat(values, stat, n=n, seed=seed)
+                home = rows["home_team"].iloc[0] if "home_team" in rows else None
+                away = rows["away_team"].iloc[0] if "away_team" in rows else None
+                sims = simulate_stat(sim_values(weekly, player, stat), stat, n=n, seed=seed,
+                                     opp_factor=matchup_factor(weekly, log, stat, home, away))
         weight = model_weight(len(values), MODEL_WEIGHT_FIRST_TD if stat == "first_td" else MODEL_WEIGHT)
 
         for idx, row in rows.iterrows():
@@ -673,3 +734,4 @@ def evaluate_props_board(props: pd.DataFrame, weekly: pd.DataFrame,
 
 
 load_calibration()
+load_sim_params()

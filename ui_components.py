@@ -428,9 +428,16 @@ def default_line(lines: pd.DataFrame, values: pd.Series) -> float:
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
-def player_sims(name_key: str, stat: str, values: tuple) -> np.ndarray:
-    """Simulación Monte Carlo del jugador (misma semilla que el escáner de props)."""
-    return pe.simulate_stat(np.asarray(values, dtype=float), stat, seed=SEED)
+def player_sims(name_key: str, stat: str, values: tuple, opp_factor: float | None = None) -> np.ndarray:
+    """Simulación Monte Carlo del jugador (misma semilla y parámetros que el escáner de props)."""
+    return pe.simulate_stat(np.asarray(values, dtype=float), stat, seed=SEED, opp_factor=opp_factor)
+
+
+def terminal_sims(weekly: pd.DataFrame, name: str, name_key: str, stat: str, log: pd.DataFrame,
+                  home: str | None, away: str | None) -> np.ndarray:
+    """Mismo historial largo y ajuste por rival que usa el escáner (model_params.json)."""
+    vals = pe.sim_values(weekly, name, stat)
+    return player_sims(name_key, stat, tuple(vals.tolist()), pe.matchup_factor(weekly, log, stat, home, away))
 
 
 @st.cache_resource(ttl=1800, show_spinner=False)
@@ -1394,7 +1401,7 @@ def _render_td_board(props: pd.DataFrame, name: str, groups: list[str], weekly: 
         if g not in groups:
             continue
         sims = (first_td_sims(weekly, log, name_key, home, away) if g == "first_td"
-                else player_sims(name_key, "total_tds", tuple(hist.tail(pe.REALISM_GAMES).tolist())))
+                else terminal_sims(weekly, name, name_key, "total_tds", log, home, away))
         mc = pe.probability_from_sims(sims, 0.5, "over")
         w = pe.model_weight(len(hist.tail(pe.REALISM_GAMES)),
                             pe.MODEL_WEIGHT_FIRST_TD if g == "first_td" else pe.MODEL_WEIGHT)
@@ -1487,7 +1494,7 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
         if stat == "first_td":
             sims = first_td_sims(weekly, log, player["name_key"], home_t, away_t)
         else:
-            sims = player_sims(player["name_key"], stat, tuple(hist.tail(pe.REALISM_GAMES).tolist()))
+            sims = terminal_sims(weekly, name, player["name_key"], stat, log, home_t, away_t)
 
         lines = player_lines(props, name, group) if player["has_odds"] else pd.DataFrame()
         reference = lines.empty
@@ -1563,8 +1570,8 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
                                  pe.MODEL_WEIGHT_FIRST_TD if stat == "first_td" else pe.MODEL_WEIGHT)
 
         # --- 🎯 Línea Más Probable (moda Monte Carlo) ---
-        mode_sims = sims if stat != "first_td" else player_sims(
-            player["name_key"], "total_tds", tuple(hist.tail(pe.REALISM_GAMES).tolist()))
+        mode_sims = sims if stat != "first_td" else terminal_sims(
+            weekly, name, player["name_key"], "total_tds", log, home_t, away_t)
         render_mode_card(pe.most_probable_line(mode_sims, hist_stat), hist_stat, line,
                          "casa" if odds_src == "casa" else "tu línea", reference)
 

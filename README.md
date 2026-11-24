@@ -207,6 +207,7 @@ python backtest.py fit                   # calibra, valida y escribe model_calib
 - **Sencillas con EV ≥ 2%:** 1,118 apuestas, ROI fuera de muestra **+2.3%**. En la prueba ciega (semanas 6–11, mercados elegidos con 3–5) el ROI fue **+1.2%** (808 apuestas). Antes de calibrar era **−9.2%**.
 - **Ventaja comprobada:** yardas de carrera (+4.1%, sobre todo Unders). Los Overs en general perdieron (−3.3%).
 - **Combinadas:** la probabilidad conjunta está bien calibrada (Moderado: 31.3% esperado vs 32.0% real). El ROI de 52 combinadas todavía es ruido.
+- **Monte Carlo entrenado** (`python model_tuning.py`, ~1 vez al mes): parámetros por mercado (`model_params.json`) entrenados con la temporada anterior (CRPS sobre el resultado real), validados con las líneas reales y adoptados solo si no empeoran la prueba final. Resultado: hasta 17 partidos de historial, distribución 10–20% más ancha y ajuste por defensa rival. Log-loss del Monte Carlo 0.6379 → 0.6230; sencillas EV ≥ 2% ROI +2.0% → **+3.3%** (1,116); prueba ciega +1.2% → **+3.0%** (482).
 - Es una sola temporada: los márgenes de error son de varios puntos. El seguimiento en vivo y el CLV confirmarán o descartarán la ventaja.
 
 > Como el bot hace commits, antes de subir cambios propios ejecuta `git pull`.

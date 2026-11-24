@@ -8,6 +8,7 @@ import re
 import unicodedata
 
 import nfl_data_py as nfl
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -224,6 +225,29 @@ def team_td_log(weekly: pd.DataFrame, team: str, n: int = 10) -> pd.Series:
     games = (weekly[weekly["recent_team"] == team]
              .groupby(["season", "week"])["total_tds"].sum().sort_index())
     return games.tail(n).astype(float)
+
+
+def defense_factor(weekly: pd.DataFrame, opponent: str | None, position_group: str | None, stat: str,
+                   window: int = 8, shrink: float = 4.0) -> float:
+    """Cuánto permite la defensa `opponent` de `stat` a una posición, relativo a la media de la liga.
+
+    1.10 = permite 10% más que el promedio. Usa sus últimos `window` partidos y se
+    encoge hacia 1 con `shrink` partidos virtuales de liga (pocos datos = poco ajuste).
+    """
+    cols = {"opponent_team", "position_group", "season", "week", stat}
+    if not opponent or not position_group or weekly is None or not cols <= set(weekly.columns):
+        return 1.0
+    grp = weekly[weekly["position_group"] == position_group]
+    per_game = grp.groupby(["opponent_team", "season", "week"])[stat].sum()
+    if per_game.empty:
+        return 1.0
+    league = float(per_game.mean())
+    if opponent not in per_game.index.get_level_values(0) or league <= 0:
+        return 1.0
+    mine = per_game.loc[opponent].sort_index().tail(window)
+    n = len(mine)
+    shrunk = (n * float(mine.mean()) + shrink * league) / (n + shrink)
+    return float(np.clip(shrunk / league, 0.6, 1.6))
 
 
 def team_points_log(schedules: pd.DataFrame, team: str, n: int = 10) -> pd.DataFrame:

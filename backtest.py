@@ -37,9 +37,14 @@ BT_DIR = ROOT / "backtest"
 RAW_DIR = BT_DIR / "raw"
 LEAD = dt.timedelta(minutes=60)
 SLOT_GAP = dt.timedelta(minutes=45)
-SEASON = 2026
-TEAM_WEEKS = range(1, 12)
-PROP_WEEKS = range(11, 2, -1)          # de la más reciente hacia atrás hasta agotar presupuesto
+def _current_season() -> int:
+    from data_pipeline import get_current_nfl_week
+    return int(get_current_nfl_week(use_schedule=False)["season"])
+
+
+SEASON = int(os.getenv("BACKTEST_SEASON") or _current_season())
+TEAM_WEEKS = range(1, 23)              # solo semanas ya jugadas (con marcador); las cacheadas no cuestan
+PROP_WEEKS = range(22, 2, -1)          # de la más reciente hacia atrás hasta agotar presupuesto
 PROP_MARKETS = ("player_pass_yds", "player_rush_yds", "player_reception_yds",
                 "player_receptions", "player_anytime_td")
 MAX_CALL_COST = 10 * len(PROP_MARKETS)

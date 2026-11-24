@@ -1,0 +1,462 @@
+{
+  "entrenamiento": {
+    "receiving_yards": {
+      "n": 2771,
+      "crps_actual": 15.5027,
+      "crps_nuevo": 15.0767,
+      "params": {
+        "window": 17,
+        "decay": 0.9,
+        "disp": 1.2,
+        "opp_beta": 0.0
+      },
+      "pasos": [
+        {
+          "params": {
+            "window": 10,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 15.5027,
+          "paso": "actual"
+        },
+        {
+          "params": {
+            "window": 13,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 15.3674,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 15.2914,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.9,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 15.2198,
+          "paso": "decay"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.9,
+            "disp": 1.1,
+            "opp_beta": 0.0
+          },
+          "crps": 15.1197,
+          "paso": "disp"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.9,
+            "disp": 1.2,
+            "opp_beta": 0.0
+          },
+          "crps": 15.0767,
+          "paso": "disp"
+        }
+      ]
+    },
+    "rushing_yards": {
+      "n": 1247,
+      "crps_actual": 16.4341,
+      "crps_nuevo": 16.129,
+      "params": {
+        "window": 17,
+        "decay": 0.85,
+        "disp": 1.2,
+        "opp_beta": 0.25
+      },
+      "pasos": [
+        {
+          "params": {
+            "window": 10,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 16.4341,
+          "paso": "actual"
+        },
+        {
+          "params": {
+            "window": 13,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 16.3023,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 16.2497,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.9,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 16.2437,
+          "paso": "decay"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.9,
+            "disp": 1.1,
+            "opp_beta": 0.0
+          },
+          "crps": 16.16,
+          "paso": "disp"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.9,
+            "disp": 1.2,
+            "opp_beta": 0.0
+          },
+          "crps": 16.137,
+          "paso": "disp"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.9,
+            "disp": 1.2,
+            "opp_beta": 0.25
+          },
+          "crps": 16.1334,
+          "paso": "opp_beta"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.2,
+            "opp_beta": 0.25
+          },
+          "crps": 16.129,
+          "paso": "decay"
+        }
+      ]
+    },
+    "passing_yards": {
+      "n": 539,
+      "crps_actual": 48.3525,
+      "crps_nuevo": 47.2854,
+      "params": {
+        "window": 17,
+        "decay": 0.85,
+        "disp": 1.1,
+        "opp_beta": 0.75
+      },
+      "pasos": [
+        {
+          "params": {
+            "window": 10,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 48.3525,
+          "paso": "actual"
+        },
+        {
+          "params": {
+            "window": 13,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 48.178,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 47.9606,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.1,
+            "opp_beta": 0.0
+          },
+          "crps": 47.8064,
+          "paso": "disp"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.1,
+            "opp_beta": 0.25
+          },
+          "crps": 47.4993,
+          "paso": "opp_beta"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.1,
+            "opp_beta": 0.5
+          },
+          "crps": 47.3253,
+          "paso": "opp_beta"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.1,
+            "opp_beta": 0.75
+          },
+          "crps": 47.2854,
+          "paso": "opp_beta"
+        }
+      ]
+    },
+    "receptions": {
+      "n": 2823,
+      "crps_actual": 1.094,
+      "crps_nuevo": 1.0853,
+      "params": {
+        "window": 17,
+        "decay": 0.85,
+        "disp": 1.1,
+        "opp_beta": 0.25
+      },
+      "pasos": [
+        {
+          "params": {
+            "window": 10,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 1.094,
+          "paso": "actual"
+        },
+        {
+          "params": {
+            "window": 13,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 1.0883,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 1.0866,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.1,
+            "opp_beta": 0.0
+          },
+          "crps": 1.0858,
+          "paso": "disp"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.1,
+            "opp_beta": 0.25
+          },
+          "crps": 1.0853,
+          "paso": "opp_beta"
+        }
+      ]
+    },
+    "total_tds": {
+      "n": 2183,
+      "crps_actual": 0.2914,
+      "crps_nuevo": 0.2854,
+      "params": {
+        "window": 17,
+        "decay": 0.95,
+        "disp": 1.0,
+        "opp_beta": 0.25
+      },
+      "pasos": [
+        {
+          "params": {
+            "window": 10,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 0.2914,
+          "paso": "actual"
+        },
+        {
+          "params": {
+            "window": 13,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 0.2891,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.85,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 0.2884,
+          "paso": "window"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.9,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 0.2863,
+          "paso": "decay"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.95,
+            "disp": 1.0,
+            "opp_beta": 0.0
+          },
+          "crps": 0.2856,
+          "paso": "decay"
+        },
+        {
+          "params": {
+            "window": 17,
+            "decay": 0.95,
+            "disp": 1.0,
+            "opp_beta": 0.25
+          },
+          "crps": 0.2854,
+          "paso": "opp_beta"
+        }
+      ]
+    }
+  },
+  "validacion_y_prueba": {
+    "por_familia": [
+      {
+        "familia": "passing_yards",
+        "n_valid": 157,
+        "n_prueba": 76,
+        "mc_actual_prueba": 0.7242,
+        "mc_nuevo_prueba": 0.7286,
+        "mercado_prueba": 0.6933
+      },
+      {
+        "familia": "receiving_yards",
+        "n_valid": 953,
+        "n_prueba": 507,
+        "mc_actual_prueba": 0.7612,
+        "mc_nuevo_prueba": 0.7269,
+        "mercado_prueba": 0.6939
+      },
+      {
+        "familia": "receptions",
+        "n_valid": 935,
+        "n_prueba": 498,
+        "mc_actual_prueba": 0.7225,
+        "mc_nuevo_prueba": 0.7146,
+        "mercado_prueba": 0.6875
+      },
+      {
+        "familia": "rushing_yards",
+        "n_valid": 474,
+        "n_prueba": 234,
+        "mc_actual_prueba": 0.7808,
+        "mc_nuevo_prueba": 0.756,
+        "mercado_prueba": 0.6931
+      },
+      {
+        "familia": "total_tds",
+        "n_valid": 1734,
+        "n_prueba": 880,
+        "mc_actual_prueba": 0.4815,
+        "mc_nuevo_prueba": 0.4689,
+        "mercado_prueba": 0.4278
+      }
+    ],
+    "total": {
+      "actual": {
+        "mc_valid": 0.6293,
+        "mc_prueba": 0.6411,
+        "calibrada_prueba": 0.5895,
+        "peso_modelo": {
+          "passing_yards": 0.37,
+          "receiving_yards": 0.315,
+          "receptions": 0.433,
+          "rushing_yards": 0.266,
+          "total_tds": 0.217
+        }
+      },
+      "nuevo": {
+        "mc_valid": 0.6107,
+        "mc_prueba": 0.6238,
+        "calibrada_prueba": 0.5895,
+        "peso_modelo": {
+          "passing_yards": 0.399,
+          "receiving_yards": 0.397,
+          "receptions": 0.455,
+          "rushing_yards": 0.355,
+          "total_tds": 0.293
+        }
+      },
+      "mercado_prueba": 0.5857
+    }
+  },
+  "adoptado": true,
+  "regla": "Se adopta el modelo nuevo solo si la probabilidad calibrada (ajustada en semanas 3–8) predice mejor las semanas 9–11, que no se usaron para nada más."
+}

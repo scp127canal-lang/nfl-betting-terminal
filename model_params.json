@@ -1,0 +1,35 @@
+{
+  "fitted_on": "temporada 2025 (CRPS) \u00b7 validado 2026 semanas 3\u201311",
+  "families": {
+    "receiving_yards": {
+      "window": 17,
+      "decay": 0.9,
+      "disp": 1.2,
+      "opp_beta": 0.0
+    },
+    "rushing_yards": {
+      "window": 17,
+      "decay": 0.85,
+      "disp": 1.2,
+      "opp_beta": 0.25
+    },
+    "passing_yards": {
+      "window": 17,
+      "decay": 0.85,
+      "disp": 1.1,
+      "opp_beta": 0.75
+    },
+    "receptions": {
+      "window": 17,
+      "decay": 0.85,
+      "disp": 1.1,
+      "opp_beta": 0.25
+    },
+    "total_tds": {
+      "window": 17,
+      "decay": 0.95,
+      "disp": 1.0,
+      "opp_beta": 0.25
+    }
+  }
+}

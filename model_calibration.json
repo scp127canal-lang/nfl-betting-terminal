@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "fitted_at": "2026-11-23T23:25:13+00:00",
+  "fitted_at": "2026-11-23T23:59:08+00:00",
   "source": "backtest con cuotas históricas de The-Odds-API (1 h antes de cada jornada)",
   "weeks": [
     1,
@@ -42,11 +42,11 @@
       "variant": "mercado"
     },
     "receptions": {
-      "a": 0.5742,
-      "b": 0.3517,
-      "c": 0.0215,
+      "a": 0.568,
+      "b": 0.3915,
+      "c": 0.0378,
       "n": 1433,
-      "model_weight": 0.38,
+      "model_weight": 0.408,
       "variant": "completo"
     },
     "rushing_yards": {
