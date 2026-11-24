@@ -1093,24 +1093,542 @@
         "roi_pct": -3.1
       }
     ],
+    "sencillas_ic90": [
+      -3.6,
+      22.4
+    ],
     "combinadas": [
       {
         "patas": 2,
-        "n": 381,
-        "prob_media_pct": 45.0,
-        "acierto_pct": 53.0,
-        "cuota_media": 2.54,
-        "roi_pct": 36.9
+        "n": 36,
+        "semanas": 9,
+        "ganadas": 18,
+        "prob_media_pct": 45.7,
+        "acierto_pct": 50.0,
+        "cuota_media": 2.68,
+        "roi_pct": 37.4,
+        "roi_ic90": [
+          -5.6,
+          78.0
+        ],
+        "roi_esperado_por_sencillas_pct": 19.2,
+        "detalle": [
+          {
+            "week": 3,
+            "p": 0.4653355574757266,
+            "odds": 3.1679999999999997,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Skyy Moore Under 1.5 recepciones + Bhayshul Tuten Under 1.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.4778457544590969,
+            "odds": 2.8729999999999998,
+            "won": 1.0,
+            "profit": 1.8729999999999998,
+            "labels": "Jaylen Warren Under 4.5 recepciones + Jaylin Noel Under 2.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.4048767748911799,
+            "odds": 3.1476,
+            "won": 1.0,
+            "profit": 2.1476,
+            "labels": "Austin Hooper Over 0.5 recepciones + Oronde Gadsden II Under 3.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.42009664087011933,
+            "odds": 2.9013999999999998,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Breece Hall Under 3.5 recepciones + Matthew Golden Under 4.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.502879348168914,
+            "odds": 2.6950000000000003,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Darius Cooper Under 2.5 recepciones + Jordan Addison Under 4.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.5361545805198359,
+            "odds": 2.2896,
+            "won": 1.0,
+            "profit": 1.2896,
+            "labels": "Jaylen Wright Under 1.5 recepciones + Kenny Gainwell Over 1.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.5152723032787602,
+            "odds": 2.2800000000000002,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Cody White Under 1.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.47622145692494977,
+            "odds": 2.2785,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Kendre Miller Under 1.5 recepciones + Adam Trautman Over 0.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.457198115050898,
+            "odds": 2.9558999999999997,
+            "won": 1.0,
+            "profit": 1.9558999999999997,
+            "labels": "Tre Harris Under 4.5 recepciones + Braelon Allen Under 2.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.4284515444789391,
+            "odds": 2.9754,
+            "won": 1.0,
+            "profit": 1.9754,
+            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.46389447158198266,
+            "odds": 2.64,
+            "won": 1.0,
+            "profit": 1.6400000000000001,
+            "labels": "Kenny Gainwell Over 1.5 recepciones + Mason Taylor Over 1.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.5361069139842615,
+            "odds": 2.0736,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Kyle Williams Under 1.5 recepciones + Jacory Croskey-Merritt Under 1.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.4413768602975137,
+            "odds": 2.8674000000000004,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Mason Taylor Over 1.5 recepciones + Xavier Worthy Under 4.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.4588242107153698,
+            "odds": 2.5217,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Davis Allen Over 0.5 recepciones + Charlie Kolar Under 2.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.45242225900613664,
+            "odds": 2.2952,
+            "won": 1.0,
+            "profit": 1.2952,
+            "labels": "Brandin Cooks Under 2.5 recepciones + Jalen Nailor Under 2.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.4557752669524544,
+            "odds": 2.262,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Foster Moreau Over 0.5 recepciones + Roschon Johnson Under 1.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.4240019284766786,
+            "odds": 2.9415000000000004,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Emanuel Wilson Under 1.5 recepciones + Braelon Allen Under 2.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.42770200914604883,
+            "odds": 2.7720000000000002,
+            "won": 1.0,
+            "profit": 1.7720000000000002,
+            "labels": "Brandin Cooks Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.43835628103310303,
+            "odds": 2.4472,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jerry Jeudy Over 1.5 recepciones + Tyler Allgeier Under 2.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.4086248421455494,
+            "odds": 2.4648000000000003,
+            "won": 1.0,
+            "profit": 1.4648000000000003,
+            "labels": "Jahan Dotson Under 2.5 recepciones + Josh Cuevas Over 0.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.417711244097405,
+            "odds": 3.1494,
+            "won": 1.0,
+            "profit": 2.1494,
+            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.426985365112209,
+            "odds": 2.688,
+            "won": 1.0,
+            "profit": 1.6880000000000002,
+            "labels": "Charlie Kolar Under 2.5 recepciones + Kyle Williams Under 1.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.4388355264527356,
+            "odds": 2.5584,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Saquon Barkley Under 2.5 recepciones + Tony Pollard Under 2.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.4397201889188209,
+            "odds": 2.4786,
+            "won": 1.0,
+            "profit": 1.4786000000000001,
+            "labels": "Austin Hooper Over 0.5 recepciones + Bhayshul Tuten Under 2.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.40072441662181696,
+            "odds": 3.4337999999999997,
+            "won": 1.0,
+            "profit": 2.4337999999999997,
+            "labels": "Darius Cooper Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.3995277541502451,
+            "odds": 2.7554999999999996,
+            "won": 1.0,
+            "profit": 1.7554999999999996,
+            "labels": "Mack Hollins Over 2.5 recepciones + Nico Collins Under 5.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.3980256347020721,
+            "odds": 2.6082000000000005,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Woody Marks Under 2.5 recepciones + Chase Brown Over 3.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.41614253276922997,
+            "odds": 2.4320000000000004,
+            "won": 1.0,
+            "profit": 1.4320000000000004,
+            "labels": "Noah Fant Over 0.5 recepciones + Ty Johnson Over 1.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.5275628719631681,
+            "odds": 2.8049999999999997,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Devin Duvernay Under 1.5 recepciones + Ashton Dulin Under 1.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.5085402624905163,
+            "odds": 2.7552,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Konata Mumpfield Under 2.5 recepciones + Theo Johnson Over 0.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.5155646737195855,
+            "odds": 2.6052,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jordan Mason Under 1.5 recepciones + Laquon Treadwell Under 2.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.5183581789181982,
+            "odds": 2.3104,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Efton Chism III Over 0.5 recepciones + Jack Bech Over 0.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.4835854088761361,
+            "odds": 2.8480000000000003,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Ashton Dulin Under 1.5 recepciones + Keenan Allen Over 2.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.4481032584000299,
+            "odds": 2.9232,
+            "won": 1.0,
+            "profit": 1.9232,
+            "labels": "Jordan Watkins Over 0.5 recepciones + Trey McBride Over 5.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.4441598299170418,
+            "odds": 2.8219999999999996,
+            "won": 1.0,
+            "profit": 1.8219999999999996,
+            "labels": "Justin Jefferson Under 7.5 recepciones + Foster Moreau Over 0.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.4651029537468922,
+            "odds": 2.3562000000000003,
+            "won": 1.0,
+            "profit": 1.3562000000000003,
+            "labels": "Theo Johnson Over 0.5 recepciones + Devin Duvernay Under 1.5 recepciones"
+          }
+        ]
       },
       {
         "patas": 3,
-        "n": 995,
-        "prob_media_pct": 30.3,
-        "acierto_pct": 39.3,
-        "cuota_media": 4.04,
-        "roi_pct": 65.0
+        "n": 26,
+        "semanas": 9,
+        "ganadas": 7,
+        "prob_media_pct": 31.2,
+        "acierto_pct": 26.9,
+        "cuota_media": 4.28,
+        "roi_pct": 31.5,
+        "roi_ic90": [
+          -42.0,
+          104.3
+        ],
+        "roi_esperado_por_sencillas_pct": 30.2,
+        "detalle": [
+          {
+            "week": 3,
+            "p": 0.32343430932598344,
+            "odds": 5.35392,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Skyy Moore Under 1.5 recepciones + Jaylen Warren Under 4.5 recepciones + Bhayshul Tuten Under 1.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.2783496943801222,
+            "odds": 5.35092,
+            "won": 1.0,
+            "profit": 4.35092,
+            "labels": "Jaylin Noel Under 2.5 recepciones + Austin Hooper Over 0.5 recepciones + Oronde Gadsden II Under 3.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.26823125928957187,
+            "odds": 4.64224,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Breece Hall Under 3.5 recepciones + Mack Hollins Over 2.5 recepciones + Matthew Golden Under 4.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.34773499163604304,
+            "odds": 4.285050000000001,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Darius Cooper Under 2.5 recepciones + Kenny Gainwell Over 1.5 recepciones + Jordan Addison Under 4.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.3763981407712979,
+            "odds": 3.3480000000000003,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jaylen Wright Under 1.5 recepciones + Cody White Under 1.5 recepciones + Adam Trautman Over 0.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.36227040684147965,
+            "odds": 3.1505039999999997,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Ollie Gordon II Under 1.5 recepciones + Tory Horton Over 0.5 recepciones + Kendre Miller Under 1.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.2976716901437752,
+            "odds": 5.143266,
+            "won": 1.0,
+            "profit": 4.143266,
+            "labels": "Tre Harris Under 4.5 recepciones + Braelon Allen Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.3052725872654378,
+            "odds": 4.5144,
+            "won": 1.0,
+            "profit": 3.5144,
+            "labels": "Kenny Gainwell Over 1.5 recepciones + Mason Taylor Over 1.5 recepciones + Darius Cooper Under 2.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.3584504778455026,
+            "odds": 3.172608,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Kyle Williams Under 1.5 recepciones + Jacory Croskey-Merritt Under 1.5 recepciones + Calvin Ridley Over 0.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.30203038880039795,
+            "odds": 4.3297740000000005,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Davis Allen Over 0.5 recepciones + Mason Taylor Over 1.5 recepciones + Xavier Worthy Under 4.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.30335363923871633,
+            "odds": 3.832984,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Brandin Cooks Under 2.5 recepciones + Charlie Kolar Under 2.5 recepciones + Jalen Nailor Under 2.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.36169987291110284,
+            "odds": 2.8275,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jaxon Smith-Njigba Under 0.5 yds carrera + Foster Moreau Over 0.5 recepciones + Roschon Johnson Under 1.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.28566173731093586,
+            "odds": 4.529910000000001,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Brandin Cooks Under 2.5 recepciones + Emanuel Wilson Under 1.5 recepciones + Braelon Allen Under 2.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.2782814662165127,
+            "odds": 4.40496,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jerry Jeudy Over 1.5 recepciones + Tyler Allgeier Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.2724664720499324,
+            "odds": 3.6972,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Tommy Tremble Over 1.5 recepciones + Jahan Dotson Under 2.5 recepciones + Josh Cuevas Over 0.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.2677504128610202,
+            "odds": 5.290992,
+            "won": 1.0,
+            "profit": 4.290992,
+            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones + Kyle Williams Under 1.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.29232151833765646,
+            "odds": 4.09344,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Saquon Barkley Under 2.5 recepciones + Charlie Kolar Under 2.5 recepciones + Tony Pollard Under 2.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.2572910760235829,
+            "odds": 5.734445999999999,
+            "won": 1.0,
+            "profit": 4.734445999999999,
+            "labels": "Mack Hollins Over 2.5 recepciones + Darius Cooper Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.24593895076545666,
+            "odds": 4.276800000000001,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Ty Johnson Over 1.5 recepciones + Chase Brown Over 3.5 recepciones + Nico Collins Under 5.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.27454425338451494,
+            "odds": 3.7197440000000004,
+            "won": 1.0,
+            "profit": 2.7197440000000004,
+            "labels": "Noah Fant Over 0.5 recepciones + Kyle Williams Under 1.5 recepciones + Woody Marks Under 2.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.3675320752422318,
+            "odds": 4.7124,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Devin Duvernay Under 1.5 recepciones + Ashton Dulin Under 1.5 recepciones + Theo Johnson Over 0.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.37634614508207637,
+            "odds": 4.272527999999999,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jordan Mason Under 1.5 recepciones + Konata Mumpfield Under 2.5 recepciones + Laquon Treadwell Under 2.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.38824838464169853,
+            "odds": 3.326976,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Drew Sample Over 0.5 recepciones + Efton Chism III Over 0.5 recepciones + Jack Bech Over 0.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.3214043778240525,
+            "odds": 4.7846400000000004,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Ashton Dulin Under 1.5 recepciones + Keenan Allen Over 2.5 recepciones + Trey McBride Over 5.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.30545872175441036,
+            "odds": 4.448136,
+            "won": 1.0,
+            "profit": 3.448136,
+            "labels": "Devin Duvernay Under 1.5 recepciones + Jordan Watkins Over 0.5 recepciones + Foster Moreau Over 0.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.2971768711446367,
+            "odds": 4.00554,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Theo Johnson Over 0.5 recepciones + Justin Jefferson Under 7.5 recepciones + Jack Bech Under 2.5 recepciones"
+          }
+        ]
       }
     ],
-    "nota_combinadas": "Combinaciones solapadas de las mismas patas: el ROI de combinadas es orientativo."
+    "nota_combinadas": "Mismas combinadas que habría mostrado la app cada semana (patas sin repetir). IC90 = rango probable del ROI remuestreando semanas. El ROI esperado por sencillas es la estimación más estable (partidos distintos = independientes)."
   }
 }

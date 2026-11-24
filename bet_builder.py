@@ -772,6 +772,33 @@ def high_prob_legs(legs: list[Leg], limit: int | None = None) -> list[Leg]:
     return out[:limit] if limit else out
 
 
+def select_safe_combos(probs, odds, events, size: int, top_n: int) -> list[tuple[int, ...]]:
+    """Regla ÚNICA de combinadas seguras (la usan la app, el seguimiento y el backtest).
+
+    Entre las candidatas (ya ordenadas de más a menos probable, máx. `pool`), todas las
+    combinaciones de `size` patas de partidos distintos, ordenadas por EV y luego por
+    probabilidad conjunta. Se eligen sin repetir patas: cada pata está en una sola
+    combinada de ese tamaño, así cada combinada es una prueba independiente.
+    """
+    probs, odds = np.asarray(probs, float), np.asarray(odds, float)
+    scored = []
+    for combo in itertools.combinations(range(len(probs)), size):
+        if len({events[i] for i in combo}) < size:
+            continue
+        p = float(np.prod(probs[list(combo)]))
+        scored.append((p * float(np.prod(odds[list(combo)])) - 1, p, combo))
+    scored.sort(key=lambda s: (s[0], s[1]), reverse=True)
+    used: set[int] = set()
+    chosen = []
+    for _, _, combo in scored:
+        if used.isdisjoint(combo):
+            chosen.append(combo)
+            used.update(combo)
+        if len(chosen) == top_n:
+            break
+    return chosen
+
+
 def build_safe_parlays(legs: list[Leg], bankroll: float = 1000.0, top_n: int = 4) -> dict[int, list[dict]]:
     """🎯 Combinadas seguras: 2–3 patas de alta probabilidad de PARTIDOS DISTINTOS.
 
@@ -781,16 +808,15 @@ def build_safe_parlays(legs: list[Leg], bankroll: float = 1000.0, top_n: int = 4
     pool = high_prob_legs(legs, int(high_prob_param("pool")))
     out: dict[int, list[dict]] = {}
     for size in range(2, int(high_prob_param("max_legs")) + 1):
-        found = []
-        for combo in itertools.combinations(pool, size):
-            if len({leg.event_id for leg in combo}) < size:
-                continue
-            p = float(np.prod([leg.prob for leg in combo]))
-            summary = _summarize(list(combo), p, p, bankroll)
+        combos = select_safe_combos([l.prob for l in pool], [l.decimal_odds for l in pool],
+                                    [l.event_id for l in pool], size, top_n)
+        out[size] = []
+        for combo in combos:
+            chosen = [pool[i] for i in combo]
+            p = float(np.prod([leg.prob for leg in chosen]))
+            summary = _summarize(chosen, p, p, bankroll)
             summary["safe"] = True
-            found.append(summary)
-        out[size] = _diverse_top(sorted(found, key=lambda s: (s["ev_pct"], s["joint_prob_pct"]), reverse=True),
-                                 top_n, max_shared=0.5)
+            out[size].append(summary)
     return out
 
 

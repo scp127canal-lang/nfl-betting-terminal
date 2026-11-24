@@ -150,6 +150,30 @@ def select_picks(legs: list[bb.Leg], weekly: pd.DataFrame, info: dict[str, dict]
                       "implied_prob_pct": leg.implied_prob_pct, "ev_pct": leg.ev_pct,
                       "legs": json.dumps([rec], ensure_ascii=False)})
 
+    # 🎯 Alta probabilidad: mismas sencillas y combinadas seguras que muestra la app
+    for leg in bb.high_prob_legs(legs, MAX_SINGLES):
+        rec = _leg_record(leg, info)
+        picks.append({"pick_id": _pick_id("single_hp", [leg.label], rec["date"] or ""), "logged_at": logged_at,
+                      "slot": slot, "kind": "single", "tier": "ALTA_PROB", "game_date": rec["date"],
+                      "events": leg.event_id, "label": leg.label, "n_legs": 1,
+                      "decimal_odds": leg.decimal_odds, "prob_pct": round(leg.prob * 100, 2),
+                      "mc_prob_pct": round(leg.model_prob * 100, 2),
+                      "implied_prob_pct": leg.implied_prob_pct, "ev_pct": leg.ev_pct,
+                      "legs": json.dumps([rec], ensure_ascii=False)})
+    by_label_all = {leg.label: leg for leg in legs}
+    for size, items in bb.build_safe_parlays(legs).items():
+        for p in items:
+            chosen = [by_label_all[lb] for lb in p["labels"] if lb in by_label_all]
+            recs = [_leg_record(leg, info) for leg in chosen]
+            date = min((r["date"] for r in recs if r["date"]), default="")
+            picks.append({"pick_id": _pick_id("safe", p["labels"], date), "logged_at": logged_at,
+                          "slot": slot, "kind": "parlay", "tier": "SEGURA", "game_date": date,
+                          "events": ";".join(sorted({r["event_id"] for r in recs})),
+                          "label": " + ".join(p["labels"]), "n_legs": p["n_legs"],
+                          "decimal_odds": p["decimal_odds"], "prob_pct": p["joint_prob_pct"],
+                          "mc_prob_pct": None, "implied_prob_pct": p["implied_prob_pct"],
+                          "ev_pct": p["ev_pct"], "legs": json.dumps(recs, ensure_ascii=False)})
+
     if len(legs) >= 2:
         tiers = bb.build_parlays(legs, weekly=weekly, top_n=1, seed=7, mode="mixed")
         by_label = {leg.label: leg for leg in legs}
@@ -368,7 +392,7 @@ def grade_picks(now: dt.datetime | None = None) -> dict:
 # --------------------------------------------------------------------------- #
 # Resumen de rendimiento
 # --------------------------------------------------------------------------- #
-GROUP_ORDER = ["SENCILLA", "BAJO", "MODERADO", "ALTO"]
+GROUP_ORDER = ["SENCILLA", "ALTA_PROB", "SEGURA", "BAJO", "MODERADO", "ALTO"]
 
 
 def summarize(picks: pd.DataFrame | None = None) -> pd.DataFrame:

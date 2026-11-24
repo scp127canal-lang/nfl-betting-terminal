@@ -421,6 +421,58 @@ def adjusted_side_prob(legs: pd.DataFrame, c: pd.DataFrame, p_over: pd.Series) -
 # --------------------------------------------------------------------------- #
 # 🎯 Alta probabilidad (regla fija de bet_builder.HIGH_PROB_DEFAULTS)
 # --------------------------------------------------------------------------- #
+SAFE_TOP_N = 4              # combinadas seguras por tamaño que muestra la app (bb.build_safe_parlays)
+BOOTSTRAP_N = 4000
+
+
+def safe_parlay_rows(sel: pd.DataFrame, size: int, rule: dict) -> pd.DataFrame:
+    """Exactamente lo que la app habría recomendado cada semana: mismo pool (las `pool`
+    patas más probables, una por jugador+estadística), misma regla de selección
+    (bb.select_safe_combos) y patas sin repetir entre combinadas."""
+    rows = []
+    for wk, g in sel.groupby("week"):
+        key = g["player"].fillna(g["event_id"].astype(str) + "|" + g["market"].astype(str)) + "|" + g["family"].astype(str)
+        g = g.assign(_k=key).sort_values("p", ascending=False).drop_duplicates("_k").head(rule["pool"])
+        combos = bb.select_safe_combos(g["p"].to_numpy(), g["odds"].to_numpy(), g["event_id"].tolist(),
+                                       size, SAFE_TOP_N)
+        for c in combos:
+            x = g.iloc[list(c)]
+            won = bool(x["won"].all())
+            odds = float(x["odds"].prod())
+            rows.append({"week": int(wk), "p": float(x["p"].prod()), "odds": odds, "won": float(won),
+                         "profit": odds - 1 if won else -1.0, "labels": " + ".join(x["label"].astype(str))})
+    return pd.DataFrame(rows, columns=["week", "p", "odds", "won", "profit", "labels"])
+
+
+def _week_bootstrap(rows: pd.DataFrame, n: int = BOOTSTRAP_N, seed: int = 0) -> tuple[float, float] | None:
+    """Intervalo 90% del ROI remuestreando SEMANAS completas (las patas de una semana no son independientes
+    del clima de esa semana, así que se remuestrea la semana entera)."""
+    if rows.empty or rows["week"].nunique() < 3:
+        return None
+    rng = np.random.default_rng(seed)
+    by_week = [(g["profit"].sum(), len(g)) for _, g in rows.groupby("week")]
+    profit = np.array([b[0] for b in by_week]); count = np.array([b[1] for b in by_week])
+    idx = rng.integers(0, len(by_week), size=(n, len(by_week)))
+    roi = profit[idx].sum(axis=1) / count[idx].sum(axis=1)
+    lo, hi = np.percentile(roi, [5, 95])
+    return round(float(lo * 100), 1), round(float(hi * 100), 1)
+
+
+def _parlay_stats(rows: pd.DataFrame, size: int, single_roi: float) -> dict:
+    n = len(rows)
+    ci = _week_bootstrap(rows)
+    return {"n": int(n), "semanas": int(rows["week"].nunique()) if n else 0,
+            "ganadas": int(rows["won"].sum()) if n else 0,
+            "prob_media_pct": round(float(rows["p"].mean() * 100), 1) if n else None,
+            "acierto_pct": round(float(rows["won"].mean() * 100), 1) if n else None,
+            "cuota_media": round(float(rows["odds"].mean()), 2) if n else None,
+            "roi_pct": round(float(rows["profit"].mean() * 100), 1) if n else None,
+            "roi_ic90": list(ci) if ci else None,
+            # Partidos distintos => EV de la combinada = producto de (1 + EV) de las sencillas
+            "roi_esperado_por_sencillas_pct": round(((1 + single_roi) ** size - 1) * 100, 1),
+            "detalle": rows.to_dict("records")}
+
+
 def high_prob_backtest(legs: pd.DataFrame, p_side: pd.Series) -> dict:
     """Sencillas y combinadas de alta probabilidad con prob. calibrada fuera de muestra.
     La regla no se optimiza aquí (se fijó antes de mirar los datos): solo se mide."""
@@ -441,28 +493,21 @@ def high_prob_backtest(legs: pd.DataFrame, p_side: pd.Series) -> dict:
     resumen = _roi(sel)
     proven = bool(resumen["n"] >= 100 and (resumen["roi_pct"] or 0) > 0
                   and (first["roi_pct"] or 0) > 0 and (second["roi_pct"] or 0) > 0)
+    single_roi = (resumen["roi_pct"] or 0) / 100
     combos = []
     for size in range(2, rule["max_legs"] + 1):
-        rows = []
-        for wk, g in sel.groupby("week"):
-            g = g.drop_duplicates("event_id").head(rule["pool"])
-            for c in itertools.combinations(g.index, size):
-                x = g.loc[list(c)]
-                rows.append((x["p"].prod(), x["odds"].prod(), x["won"].prod()))
-        r = np.array(rows) if rows else np.zeros((0, 3))
-        combos.append({"patas": size, "n": int(len(r)),
-                       "prob_media_pct": round(float(r[:, 0].mean() * 100), 1) if len(r) else None,
-                       "acierto_pct": round(float(r[:, 2].mean() * 100), 1) if len(r) else None,
-                       "cuota_media": round(float(r[:, 1].mean()), 2) if len(r) else None,
-                       "roi_pct": round(float(np.where(r[:, 2] == 1, r[:, 1] - 1, -1).mean() * 100), 1)
-                       if len(r) else None})
+        rows = safe_parlay_rows(sel, size, rule)
+        combos.append({"patas": size, **_parlay_stats(rows, size, single_roi)})
     return {"regla": {**rule, "max_credible_ev": pe.MAX_CREDIBLE_EV}, "resumen": resumen,
             "primera_mitad": {"semanas": f"< {half}", **first}, "segunda_mitad": {"semanas": f">= {half}", **second},
             "comprobada": proven,
             "por_familia": [{"familia": f, **_roi(g)} for f, g in sel.groupby("family")],
             "por_semana": [{"semana": int(w), **_roi(g)} for w, g in sel.groupby("week")],
+            "sencillas_ic90": list(_week_bootstrap(sel.assign(profit=sel["profit"])) or []) or None,
             "combinadas": combos,
-            "nota_combinadas": "Combinaciones solapadas de las mismas patas: el ROI de combinadas es orientativo."}
+            "nota_combinadas": ("Mismas combinadas que habría mostrado la app cada semana (patas sin repetir). "
+                                "IC90 = rango probable del ROI remuestreando semanas. El ROI esperado por "
+                                "sencillas es la estimación más estable (partidos distintos = independientes).")}
 
 
 # --------------------------------------------------------------------------- #
@@ -610,7 +655,9 @@ def fit(parlays: bool = True) -> dict:
                                              "primera_mitad": high_prob["primera_mitad"],
                                              "segunda_mitad": high_prob["segunda_mitad"],
                                              "por_familia": high_prob["por_familia"],
-                                             "combinadas": high_prob["combinadas"]}}
+                                             "sencillas_ic90": high_prob["sencillas_ic90"],
+                                             "combinadas": [{k: v for k, v in c.items() if k != "detalle"}
+                                                            for c in high_prob["combinadas"]]}}
 
     # --- 5) Combinadas con calibración fuera de muestra ----------------------
     parlay_report, parlay_variants = {}, {}

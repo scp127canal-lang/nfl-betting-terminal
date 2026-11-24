@@ -1185,7 +1185,7 @@ def _render_live(mtime: float | None) -> None:
     if settled < 50:
         st.caption(f"⚠️ Muestra pequeña ({settled} calificadas): con menos de ~100–200 selecciones el ROI "
                    "es sobre todo varianza. Lo importante es que el acierto real se acerque al esperado.")
-    names = {"SENCILLA": "Sencillas", "BAJO": "🟢 Bajo", "MODERADO": "🟡 Moderado", "ALTO": "🔴 Alto",
+    names = {"SENCILLA": "Sencillas", "ALTA_PROB": "🎯 Alta prob.", "SEGURA": "🎯 Seguras", "BAJO": "🟢 Bajo", "MODERADO": "🟡 Moderado", "ALTO": "🔴 Alto",
              "TOTAL": "Total"}
     st.dataframe(summary.assign(grupo=summary["grupo"].map(names)).rename(columns={
         "grupo": "Grupo", "selecciones": "Sel.", "pendientes": "Pend.", "ganadas": "G", "perdidas": "P",
@@ -1764,7 +1764,9 @@ def high_prob_caption() -> str:
                      sorted(bt.get("por_familia") or [], key=lambda f: -f["n"]))
     state = "✅ comprobada" if hp.get("comprobada") else "⚠️ sin comprobar"
     return (f"{rule} Backtest fuera de muestra ({state}): {r['n']} apuestas, acierto {r['acierto_pct']}% "
-            f"(esperado {r['prob_media_pct']}%), ROI {r['roi_pct']:+.1f}% · semanas {a['semanas']}: "
+            f"(esperado {r['prob_media_pct']}%), ROI {r['roi_pct']:+.1f}%"
+            + (f" (rango probable {ci[0]:+.0f}% a {ci[1]:+.0f}%)" if (ci := bt.get("sencillas_ic90")) else "")
+            + f" · semanas {a['semanas']}: "
             f"{a['roi_pct']:+.1f}% · {b['semanas']}: {b['roi_pct']:+.1f}%. Por mercado: {fams}. "
             "Más seguras no significa garantizadas: 1 de cada 3 falla.")
 
@@ -1798,6 +1800,16 @@ def render_high_prob_module(pool: list[bb.Leg], bankroll: float, note: str = "")
     st.caption("2–3 patas de alta probabilidad de partidos distintos (sin SGP: la casa no recorta la cuota "
                "y la probabilidad conjunta es el producto). El stake sugerido es 0 si el EV no es positivo: "
                "cada tarjeta indica la cuota real a partir de la cual sí lo es.")
+    safe_bt = ((pe.CALIBRATION.get("high_prob") or {}).get("backtest") or {}).get("combinadas") or []
+    if safe_bt:
+        parts = []
+        for c in safe_bt:
+            ci = f" (rango probable {c['roi_ic90'][0]:+.0f}% a {c['roi_ic90'][1]:+.0f}%)" if c.get("roi_ic90") else ""
+            parts.append(f"{c['patas']} patas: {c['ganadas']}/{c['n']} ganadas en {c['semanas']} semanas, "
+                         f"ROI {c['roi_pct']:+.1f}%{ci}; esperado por las sencillas "
+                         f"{c['roi_esperado_por_sencillas_pct']:+.1f}%")
+        st.caption("🧪 Backtest con las mismas combinadas que habría mostrado la app (patas sin repetir): "
+                   + " · ".join(parts) + ". Muestra chica: el seguimiento en vivo lo confirmará.")
     safe = bb.build_safe_parlays(pool, bankroll)
     legs_by_label = {leg.label: leg for leg in pool}
     cols = st.columns(2)

@@ -159,22 +159,40 @@
           "roi_pct": -100.0
         }
       ],
+      "sencillas_ic90": [
+        -3.6,
+        22.4
+      ],
       "combinadas": [
         {
           "patas": 2,
-          "n": 381,
-          "prob_media_pct": 45.0,
-          "acierto_pct": 53.0,
-          "cuota_media": 2.54,
-          "roi_pct": 36.9
+          "n": 36,
+          "semanas": 9,
+          "ganadas": 18,
+          "prob_media_pct": 45.7,
+          "acierto_pct": 50.0,
+          "cuota_media": 2.68,
+          "roi_pct": 37.4,
+          "roi_ic90": [
+            -5.6,
+            78.0
+          ],
+          "roi_esperado_por_sencillas_pct": 19.2
         },
         {
           "patas": 3,
-          "n": 995,
-          "prob_media_pct": 30.3,
-          "acierto_pct": 39.3,
-          "cuota_media": 4.04,
-          "roi_pct": 65.0
+          "n": 26,
+          "semanas": 9,
+          "ganadas": 7,
+          "prob_media_pct": 31.2,
+          "acierto_pct": 26.9,
+          "cuota_media": 4.28,
+          "roi_pct": 31.5,
+          "roi_ic90": [
+            -42.0,
+            104.3
+          ],
+          "roi_esperado_por_sencillas_pct": 30.2
         }
       ]
     }
