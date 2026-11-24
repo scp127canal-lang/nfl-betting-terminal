@@ -89,6 +89,11 @@ def games_view() -> None:
             player_pool = ui.player_legs_cached(props, weekly, f"main-{week}-{snap}-{len(props)}")
     pool = team_pool + player_pool
     note = ui.pool_note(player_pool, team_pool, props)
+    if mode == "safe":
+        if not player_pool:
+            st.caption("Sin props de jugadores cargados: solo se consideran líneas de partido.")
+        ui.render_high_prob_module(pool, st.session_state["bankroll"], note)
+        return
     if mode != "teams" and not player_pool:
         st.info("No hay props de jugadores cargados para los partidos pendientes: ábrelos o usa el botón "
                 "de descarga (los props suelen publicarse 1-3 días antes del partido). "
@@ -125,6 +130,7 @@ def player_detail_view() -> None:
     with st.spinner("Calculando +EV de todos los props..."):
         scan = ui.scan_game_props(props, weekly, f"{gid}-{snap}-{len(props)}")
     best_ev = ui.best_ev_by_player(scan)
+    top_prob = ui.most_probable_by_player(scan)
 
     ui.render_game_header(game, proj, source, len(players), not props.empty)
     if props.empty:
@@ -150,6 +156,14 @@ def player_detail_view() -> None:
     if pid:  # el jugador ya no está en este partido (cambio de cuotas/plantilla)
         st.session_state.selected_player_id = None
 
+    # --- 🎯 Alta probabilidad del partido ---
+    if not props.empty:
+        game_legs = ui.player_legs_cached(props, weekly, f"main-{gid}-{snap}-{len(props)}")
+        n_hp = len(ui.bb.high_prob_legs(game_legs))
+        with st.expander(f"🎯 Alta probabilidad en este partido · {n_hp} selección(es)", expanded=n_hp > 0):
+            st.caption(ui.high_prob_caption())
+            ui.render_high_prob_list(game_legs, f"g_{gid}", limit=8)
+
     # --- Catálogo completo de jugadores del partido ---
     c1, c2 = st.columns([2, 3], vertical_alignment="bottom")
     query = c1.text_input("🔎 Buscar jugador", key=f"q_{gid}", placeholder="Nombre del jugador...")
@@ -166,7 +180,7 @@ def player_detail_view() -> None:
         return
     st.markdown('<div class="pulse">👇 Toca "📊 Analizar" para abrir la ficha completa del jugador</div>',
                 unsafe_allow_html=True)
-    ui.render_player_cards(shown, best_ev)
+    ui.render_player_cards(shown, best_ev, top_prob=top_prob)
 
 
 if st.session_state.current_view == "player_detail" and st.session_state.selected_game:

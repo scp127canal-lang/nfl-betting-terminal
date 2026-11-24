@@ -123,6 +123,13 @@ def badge_html(tier: str | None) -> str:
     return f'<span class="badge badge-{tier}">{info["emoji"]} {info["badge"]}</span>'
 
 
+def min_odds_for_value(fair_odds) -> float | None:
+    """Cuota mínima que hay que conseguir (ej. en Draftea) para que la selección sea +EV."""
+    if _nan(fair_odds) or not fair_odds:
+        return None
+    return round(float(fair_odds) * (1 + pe.MIN_EDGE_PCT / 100), 2)
+
+
 def ev_badge(ev_pct, fair_odds=None, plus_ev: bool | None = None, status: str | None = None) -> str:
     """🟢 +EV +8.4% · Fair Odds: 1.62  |  🟡 sin ventaja comprobada  |  EV −3.1% · Fair 1.95."""
     if _nan(ev_pct):
@@ -131,7 +138,7 @@ def ev_badge(ev_pct, fair_odds=None, plus_ev: bool | None = None, status: str | 
     if status == "unvalidated":
         return (f'<span class="evb evb-warn" title="El modelo ve valor, pero en el backtest con cuotas '
                 f'históricas este mercado no ganó dinero. Trátalo como EV ≈ 0.">🟡 EV {ev_pct:+.1f}% · '
-                f'sin ventaja comprobada</span>')
+                f'sin ventaja comprobada · justa {fmt_odds(fair_odds)}</span>')
     plus = pe.MIN_EDGE_PCT <= ev_pct <= pe.MAX_CREDIBLE_EV if plus_ev is None else plus_ev
     if not plus and ev_pct > pe.MAX_CREDIBLE_EV:
         return (f'<span class="evb evb-none" title="EV demasiado alto para ser real: el mercado probablemente '
@@ -139,7 +146,11 @@ def ev_badge(ev_pct, fair_odds=None, plus_ev: bool | None = None, status: str | 
     if plus:
         return (f'<span class="evb evb-pos">🟢 +EV {ev_pct:+.1f}% · Fair Odds: '
                 f'{fmt_odds(fair_odds)}</span>')
-    return f'<span class="evb evb-neg">EV {ev_pct:+.1f}% · Fair {fmt_odds(fair_odds)}</span>'
+    need = min_odds_for_value(fair_odds)
+    tip = (f' title="Cuota justa {fmt_odds(fair_odds)}. Si encuentras {fmt_odds(need)} o más (ej. en Draftea), '
+           f'la selección pasa a +EV."' if need else "")
+    return (f'<span class="evb evb-neg"{tip}>EV {ev_pct:+.1f}% · justa {fmt_odds(fair_odds)}'
+            + (f' · pide ≥ {fmt_odds(need)}' if need else "") + '</span>')
 
 
 def chip(text: str, cls: str = "") -> str:
@@ -344,6 +355,27 @@ def best_ev_by_player(scan: pd.DataFrame) -> dict[str, dict]:
     counts = plus.groupby("player").size().to_dict()
     for p in out:
         out[p]["n_plus"] = int(counts.get(p, 0))
+    return out
+
+
+def most_probable_by_player(scan: pd.DataFrame) -> dict[str, dict]:
+    """Selección más probable de cada jugador (línea principal, cuota >= mínima de alta prob.)."""
+    if scan.empty or "real_prob_pct" not in scan:
+        return {}
+    d = scan[scan["market"].map(op.is_main_market) & scan["real_prob_pct"].notna()
+             & (scan["decimal_odds"] >= float(bb.high_prob_param("min_odds")))
+             & (scan["ev_pct"] <= pe.MAX_CREDIBLE_EV) & (scan["real_prob_pct"] >= 50)]
+    out = {}
+    for r in d.sort_values("real_prob_pct", ascending=False).drop_duplicates("player").itertuples(index=False):
+        if r.market in op.YES_NO_MARKETS:
+            label = f"{MARKET_LABEL.get(r.market, '')} · {'Sí' if r.outcome == 'Over' else 'No'}"
+        else:
+            label = f"{r.outcome} {r.line:g} {MARKET_LABEL.get(r.market, '')}"
+        p = r.real_prob_pct / 100
+        out[r.player] = {"label": label, "prob": p, "odds": r.decimal_odds, "ev_pct": r.ev_pct,
+                         "fair_odds": r.fair_odds,
+                         "high": bool(p >= float(bb.high_prob_param("min_prob"))
+                                      and r.ev_pct >= float(bb.high_prob_param("min_ev")))}
     return out
 
 
@@ -773,6 +805,9 @@ div[class*="st-key-back"] button:hover {{ border-color: {GREEN}; color: {GREEN};
 .st-key-btmetrics [data-testid="stMetricLabel"] p, .st-key-perfmetrics [data-testid="stMetricLabel"] p {{
   font-size: .72rem !important; white-space: nowrap; }}
 .evb-warn {{ color: #FFB020; background: rgba(255,176,32,.08); border: 1px solid rgba(255,176,32,.45); }}
+.evb-hp {{ color: #58A6FF; background: rgba(88,166,255,.08); border: 1px solid rgba(88,166,255,.45); }}
+.hp-row {{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }}
+.hp-row .lbl {{ font-weight: 600; }}
 .evb-none {{ color: {MUTED}; border: 1px dashed {BORDER_HI}; }}
 .ev-cap {{ text-align: center; font-size: .7rem; margin-top: -4px; }}
 .ev-cap.pos {{ color: {GREEN}; }} .ev-cap.neg {{ color: {MUTED}; }}
@@ -1260,7 +1295,8 @@ def render_game_header(game: pd.Series, proj: dict | None, source: str, n_player
             f'{when}{week}{chip(esc(source))}{props_chip}</div></div>', unsafe_allow_html=True)
 
 
-def render_player_cards(players: pd.DataFrame, best_ev: dict, per_row: int = 4) -> None:
+def render_player_cards(players: pd.DataFrame, best_ev: dict, per_row: int = 4,
+                        top_prob: dict | None = None) -> None:
     """Catálogo de jugadores del partido. Clic en una tarjeta -> Focus View."""
     for start in range(0, len(players), per_row):
         cols = st.columns(per_row)
@@ -1273,6 +1309,13 @@ def render_player_cards(players: pd.DataFrame, best_ev: dict, per_row: int = 4) 
                 tag = (f'{ev_badge(best["ev_pct"], best["fair_odds"], True)}'
                        f'<div class="muted" style="margin-top:3px">{esc(best["label"])} · '
                        f'{best["n_plus"]} prop(s) +EV</div>')
+            elif (top_prob or {}).get(row.player):
+                t = top_prob[row.player]
+                cls = "evb-hp" if t["high"] else "evb-none"
+                tag = (f'<span class="evb {cls}">🎯 P {t["prob"]:.0%} · {fmt_odds(t["odds"])}'
+                       f'{" · alta prob." if t["high"] else ""}</span>'
+                       f'<div class="muted" style="margin-top:3px">{esc(t["label"])} · pide ≥ '
+                       f'{fmt_odds(min_odds_for_value(t["fair_odds"]))} para +EV</div>')
             elif row.has_odds:
                 tag = '<span class="evb evb-neg">Sin props +EV</span>'
             else:
@@ -1604,6 +1647,12 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
                             f"{pe.MIN_EDGE_PCT:g}% · media {res['projection_mean']:g} · mediana "
                             f"{res['projection_median']:g} · Realism Guard OK (tope {res['realism']['threshold']:g})"
                             f"</span></div>", unsafe_allow_html=True)
+                need = min_odds_for_value(res["fair_odds"])
+                if not res["is_plus_ev"] and need:
+                    st.markdown(f"<div class='muted' style='margin:2px 0 6px'>💡 Cuota justa "
+                                f"<b class='mono'>{fmt_odds(res['fair_odds'])}</b> · para que sea +EV necesitas "
+                                f"<b class='mono'>≥ {fmt_odds(need)}</b>. Si Draftea la paga, activa "
+                                f"'Usar línea manual' y escribe su cuota.</div>", unsafe_allow_html=True)
                 with st.container(key="addrow"):
                     st.button("➕ Añadir a la Boleta", key=f"add_{km}", type="primary",
                               on_click=add_player_selection,
@@ -1635,8 +1684,12 @@ def render_player_terminal(player: pd.Series, props: pd.DataFrame, weekly: pd.Da
 def render_parlay_card(parlay: dict, legs_by_label: dict, bankroll: float, key: str) -> None:
     with st.container(key=f"parlay_{key}"):
         extra = chip("🔥 SGP", "chip-pink") if parlay.get("sgp") else ""
+        if parlay.get("safe"):
+            extra += chip("🎯 Partidos distintos")
         mix = chip(f"👤 {parlay.get('n_player_legs', 0)} · 🏟️ {parlay.get('n_team_legs', 0)}")
-        st.markdown(f"{badge_html(parlay['tier'])} {extra} {mix} <span class='muted'>· {parlay['n_legs']} "
+        head = ('<span class="badge badge-NONE">🎯 SEGURA</span>' if parlay.get("safe")
+                else badge_html(parlay["tier"]))
+        st.markdown(f"{head} {extra} {mix} <span class='muted'>· {parlay['n_legs']} "
                     f"patas</span>", unsafe_allow_html=True)
         for leg in parlay["legs"]:
             st.markdown(f"<div class='leg-line'>• {esc(leg['label'])} <b>{fmt_odds(leg['decimal_odds'])}</b> "
@@ -1661,6 +1714,7 @@ PARLAY_MODES = {
     "mixed": "🔀 Mixtos (Equipos + Jugadores)",
     "players": "👤 Solo Jugadores",
     "teams": "🏟️ Solo Equipos",
+    "safe": "🎯 Alta probabilidad",
 }
 
 
@@ -1696,6 +1750,64 @@ def render_parlay_module(tiers: dict, legs_by_label: dict, bankroll: float, note
                 st.info("Sin combinadas +EV que cumplan este nivel con las cuotas actuales.")
             for i, p in enumerate(parlays):
                 render_parlay_card(p, legs_by_label, bankroll, f"{tier}_{i}")
+
+
+def high_prob_caption() -> str:
+    hp = pe.CALIBRATION.get("high_prob") or {}
+    rule = (f"Prob. ajustada ≥ {float(bb.high_prob_param('min_prob')):.0%} y precio casi justo "
+            f"(EV ≥ {float(bb.high_prob_param('min_ev')):+g}%), solo líneas principales.")
+    bt = (hp.get("backtest") or {})
+    r, a, b = bt.get("resumen"), bt.get("primera_mitad"), bt.get("segunda_mitad")
+    if not r:
+        return rule + " Aún sin backtest."
+    fams = ", ".join(f"{FAMILY_LABEL.get(f['familia'], f['familia'])} {f['n']}" for f in
+                     sorted(bt.get("por_familia") or [], key=lambda f: -f["n"]))
+    state = "✅ comprobada" if hp.get("comprobada") else "⚠️ sin comprobar"
+    return (f"{rule} Backtest fuera de muestra ({state}): {r['n']} apuestas, acierto {r['acierto_pct']}% "
+            f"(esperado {r['prob_media_pct']}%), ROI {r['roi_pct']:+.1f}% · semanas {a['semanas']}: "
+            f"{a['roi_pct']:+.1f}% · {b['semanas']}: {b['roi_pct']:+.1f}%. Por mercado: {fams}. "
+            "Más seguras no significa garantizadas: 1 de cada 3 falla.")
+
+
+def render_high_prob_list(legs: list[bb.Leg], key: str, limit: int = 12) -> None:
+    """Lista de sencillas de alta probabilidad con botón para la boleta."""
+    picks = bb.high_prob_legs(legs, limit)
+    if not picks:
+        st.info("No hay selecciones de alta probabilidad a precio justo con las cuotas actuales.")
+        return
+    for i, leg in enumerate(picks):
+        need = round((1 + pe.MIN_EDGE_PCT / 100) / leg.prob, 2)
+        c1, c2 = st.columns([6, 1.4], vertical_alignment="center")
+        status = "✅ +EV" if leg.plus_ev else f"EV {leg.ev_pct:+.1f}%"
+        c1.markdown(f"<div class='hp-row'><span class='lbl'>{esc(leg.label)}</span>"
+                    f"<span class='evb evb-hp'>🎯 P {leg.prob:.0%}</span>"
+                    f"<span class='mono'>{fmt_odds(leg.decimal_odds)}</span>"
+                    f"<span class='muted'>{status} · justa {fmt_odds(1 / leg.prob)} · +EV si pagan ≥ "
+                    f"{fmt_odds(need)} · {game_tag(leg.event_id) or esc(leg.team or '')}</span></div>", unsafe_allow_html=True)
+        c2.button("➕ Boleta", key=f"hp_{key}_{i}", width="stretch", on_click=add_to_slip, args=([leg],))
+
+
+def render_high_prob_module(pool: list[bb.Leg], bankroll: float, note: str = "") -> None:
+    """🎯 Alta probabilidad: sencillas + combinadas seguras (2–3 patas de partidos distintos)."""
+    if note:
+        st.caption(note)
+    st.caption("🎯 " + high_prob_caption())
+    st.markdown("#### 🎯 Sencillas de alta probabilidad")
+    render_high_prob_list(pool, "slate")
+    st.markdown("#### 🎯 Combinadas seguras")
+    st.caption("2–3 patas de alta probabilidad de partidos distintos (sin SGP: la casa no recorta la cuota "
+               "y la probabilidad conjunta es el producto). El stake sugerido es 0 si el EV no es positivo: "
+               "cada tarjeta indica la cuota real a partir de la cual sí lo es.")
+    safe = bb.build_safe_parlays(pool, bankroll)
+    legs_by_label = {leg.label: leg for leg in pool}
+    cols = st.columns(2)
+    for col, size in zip(cols, sorted(safe)):
+        with col:
+            st.markdown(f"<h4 class='tier-h'>🎯 {size} patas</h4>", unsafe_allow_html=True)
+            if not safe[size]:
+                st.info("Sin combinaciones de partidos distintos que cumplan la regla.")
+            for i, p in enumerate(safe[size]):
+                render_parlay_card(p, legs_by_label, bankroll, f"safe{size}_{i}")
 
 
 # =========================================================================== #

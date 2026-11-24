@@ -101,5 +101,82 @@
     "validated_only": true,
     "min_leg_ev": 2.0,
     "disabled_tiers": []
+  },
+  "high_prob": {
+    "min_prob": 0.6,
+    "min_ev": -2.0,
+    "min_odds": 1.25,
+    "max_legs": 3,
+    "pool": 10,
+    "comprobada": true,
+    "backtest": {
+      "resumen": {
+        "n": 234,
+        "acierto_pct": 66.2,
+        "prob_media_pct": 64.6,
+        "unidades": 21.58,
+        "roi_pct": 9.2
+      },
+      "primera_mitad": {
+        "semanas": "< 6",
+        "n": 80,
+        "acierto_pct": 65.0,
+        "prob_media_pct": 65.0,
+        "unidades": 6.0,
+        "roi_pct": 7.5
+      },
+      "segunda_mitad": {
+        "semanas": ">= 6",
+        "n": 154,
+        "acierto_pct": 66.9,
+        "prob_media_pct": 64.3,
+        "unidades": 15.58,
+        "roi_pct": 10.1
+      },
+      "por_familia": [
+        {
+          "familia": "receptions",
+          "n": 226,
+          "acierto_pct": 65.9,
+          "prob_media_pct": 64.6,
+          "unidades": 20.18,
+          "roi_pct": 8.9
+        },
+        {
+          "familia": "rushing_yards",
+          "n": 7,
+          "acierto_pct": 85.7,
+          "prob_media_pct": 64.5,
+          "unidades": 2.4,
+          "roi_pct": 34.3
+        },
+        {
+          "familia": "total_tds",
+          "n": 1,
+          "acierto_pct": 0.0,
+          "prob_media_pct": 65.0,
+          "unidades": -1.0,
+          "roi_pct": -100.0
+        }
+      ],
+      "combinadas": [
+        {
+          "patas": 2,
+          "n": 381,
+          "prob_media_pct": 45.0,
+          "acierto_pct": 53.0,
+          "cuota_media": 2.54,
+          "roi_pct": 36.9
+        },
+        {
+          "patas": 3,
+          "n": 995,
+          "prob_media_pct": 30.3,
+          "acierto_pct": 39.3,
+          "cuota_media": 4.04,
+          "roi_pct": 65.0
+        }
+      ]
+    }
   }
 }

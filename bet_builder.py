@@ -734,6 +734,66 @@ def _diverse_top(parlays: list[dict], top_n: int, max_shared: float = 0.6) -> li
     return chosen
 
 
+# --------------------------------------------------------------------------- #
+# 🎯 Alta probabilidad: selecciones "más seguras" a precio casi justo
+# --------------------------------------------------------------------------- #
+# Regla fijada ANTES de mirar el backtest: prob. ajustada >= 60% y EV >= −2%.
+# Más seguras no significa más rentables: la casa cobra la probabilidad en la cuota;
+# lo que filtra es que el precio sea casi justo según la probabilidad calibrada.
+HIGH_PROB_DEFAULTS = {
+    "min_prob": 0.60,
+    "min_ev": -2.0,
+    "min_odds": 1.25,       # sin selecciones triviales (Over 0.5 @ 1.05)
+    "max_legs": 3,
+    "pool": 10,
+}
+
+
+def high_prob_param(name: str):
+    return (pe.CALIBRATION.get("high_prob") or {}).get(name, HIGH_PROB_DEFAULTS[name])
+
+
+def is_high_prob(leg: Leg) -> bool:
+    main = leg.kind == "team" or is_main_market(leg.market)
+    return bool(main and leg.prob >= float(high_prob_param("min_prob"))
+                and float(high_prob_param("min_ev")) <= leg.ev_pct <= pe.MAX_CREDIBLE_EV
+                and leg.decimal_odds >= float(high_prob_param("min_odds")))
+
+
+def high_prob_legs(legs: list[Leg], limit: int | None = None) -> list[Leg]:
+    """Selecciones de alta probabilidad (una por jugador+estadística / partido), de más a menos probable."""
+    best: dict[tuple, Leg] = {}
+    for leg in legs:
+        if not is_high_prob(leg):
+            continue
+        if leg.unique_key not in best or leg.prob > best[leg.unique_key].prob:
+            best[leg.unique_key] = leg
+    out = sorted(best.values(), key=lambda l: (l.prob, l.ev_pct), reverse=True)
+    return out[:limit] if limit else out
+
+
+def build_safe_parlays(legs: list[Leg], bankroll: float = 1000.0, top_n: int = 4) -> dict[int, list[dict]]:
+    """🎯 Combinadas seguras: 2–3 patas de alta probabilidad de PARTIDOS DISTINTOS.
+
+    Partidos distintos = resultados prácticamente independientes: la probabilidad
+    conjunta es el producto de las marginales calibradas y no hay recorte de SGP.
+    """
+    pool = high_prob_legs(legs, int(high_prob_param("pool")))
+    out: dict[int, list[dict]] = {}
+    for size in range(2, int(high_prob_param("max_legs")) + 1):
+        found = []
+        for combo in itertools.combinations(pool, size):
+            if len({leg.event_id for leg in combo}) < size:
+                continue
+            p = float(np.prod([leg.prob for leg in combo]))
+            summary = _summarize(list(combo), p, p, bankroll)
+            summary["safe"] = True
+            found.append(summary)
+        out[size] = _diverse_top(sorted(found, key=lambda s: (s["ev_pct"], s["joint_prob_pct"]), reverse=True),
+                                 top_n, max_shared=0.5)
+    return out
+
+
 def parlays_to_frame(tiers: dict[str, list[dict]]) -> pd.DataFrame:
     """Vista tabular (una fila por combinada) para Streamlit."""
     rows = [{"badge": p["badge"], "n_legs": p["n_legs"], "selecciones": " + ".join(p["labels"]),

@@ -419,6 +419,53 @@ def adjusted_side_prob(legs: pd.DataFrame, c: pd.DataFrame, p_over: pd.Series) -
 
 
 # --------------------------------------------------------------------------- #
+# 🎯 Alta probabilidad (regla fija de bet_builder.HIGH_PROB_DEFAULTS)
+# --------------------------------------------------------------------------- #
+def high_prob_backtest(legs: pd.DataFrame, p_side: pd.Series) -> dict:
+    """Sencillas y combinadas de alta probabilidad con prob. calibrada fuera de muestra.
+    La regla no se optimiza aquí (se fijó antes de mirar los datos): solo se mide."""
+    import itertools
+    rule = bb.HIGH_PROB_DEFAULTS
+    d = legs[legs["result"].isin(["won", "lost"]) & legs["odds"].notna() & legs["main"]].copy()
+    d["p"] = p_side.reindex(d.index)
+    d = d.dropna(subset=["p"])
+    d["won"] = (d["result"] == "won").astype(float)
+    d["ev"] = (d["p"] * d["odds"] - 1) * 100
+    d["profit"] = np.where(d["won"] == 1, d["odds"] - 1, -1.0)
+    sel = d[(d["p"] >= rule["min_prob"]) & (d["ev"] >= rule["min_ev"]) & (d["ev"] <= pe.MAX_CREDIBLE_EV)
+            & (d["odds"] >= rule["min_odds"])]
+    sel = sel.sort_values("p", ascending=False).drop_duplicates(["event_id", "market", "player", "line"])
+    weeks = sorted(int(w) for w in d["week"].unique())
+    half = weeks[len(weeks) // 2] if weeks else 0
+    first, second = _roi(sel[sel["week"] < half]), _roi(sel[sel["week"] >= half])
+    resumen = _roi(sel)
+    proven = bool(resumen["n"] >= 100 and (resumen["roi_pct"] or 0) > 0
+                  and (first["roi_pct"] or 0) > 0 and (second["roi_pct"] or 0) > 0)
+    combos = []
+    for size in range(2, rule["max_legs"] + 1):
+        rows = []
+        for wk, g in sel.groupby("week"):
+            g = g.drop_duplicates("event_id").head(rule["pool"])
+            for c in itertools.combinations(g.index, size):
+                x = g.loc[list(c)]
+                rows.append((x["p"].prod(), x["odds"].prod(), x["won"].prod()))
+        r = np.array(rows) if rows else np.zeros((0, 3))
+        combos.append({"patas": size, "n": int(len(r)),
+                       "prob_media_pct": round(float(r[:, 0].mean() * 100), 1) if len(r) else None,
+                       "acierto_pct": round(float(r[:, 2].mean() * 100), 1) if len(r) else None,
+                       "cuota_media": round(float(r[:, 1].mean()), 2) if len(r) else None,
+                       "roi_pct": round(float(np.where(r[:, 2] == 1, r[:, 1] - 1, -1).mean() * 100), 1)
+                       if len(r) else None})
+    return {"regla": {**rule, "max_credible_ev": pe.MAX_CREDIBLE_EV}, "resumen": resumen,
+            "primera_mitad": {"semanas": f"< {half}", **first}, "segunda_mitad": {"semanas": f">= {half}", **second},
+            "comprobada": proven,
+            "por_familia": [{"familia": f, **_roi(g)} for f, g in sel.groupby("family")],
+            "por_semana": [{"semana": int(w), **_roi(g)} for w, g in sel.groupby("week")],
+            "combinadas": combos,
+            "nota_combinadas": "Combinaciones solapadas de las mismas patas: el ROI de combinadas es orientativo."}
+
+
+# --------------------------------------------------------------------------- #
 # Combinadas: backtest semana a semana con calibración fuera de muestra
 # --------------------------------------------------------------------------- #
 def parlay_backtest(cal_by_week: dict[int, dict], variants: dict[str, dict]) -> dict:
@@ -557,6 +604,13 @@ def fit(parlays: bool = True) -> dict:
         "validated_families": validated,
         "parlay": {"lift_weight": lift_w},
     }
+    high_prob = high_prob_backtest(legs, p_side)
+    calibration["high_prob"] = {**bb.HIGH_PROB_DEFAULTS, "comprobada": high_prob["comprobada"],
+                                "backtest": {"resumen": high_prob["resumen"],
+                                             "primera_mitad": high_prob["primera_mitad"],
+                                             "segunda_mitad": high_prob["segunda_mitad"],
+                                             "por_familia": high_prob["por_familia"],
+                                             "combinadas": high_prob["combinadas"]}}
 
     # --- 5) Combinadas con calibración fuera de muestra ----------------------
     parlay_report, parlay_variants = {}, {}
@@ -600,6 +654,7 @@ def fit(parlays: bool = True) -> dict:
                       "sin_modelo_todas": _roi(bets.assign(won=bets["won"]))},
         "lift": lift_rows,
         "combinadas": parlay_report,
+        "alta_probabilidad": high_prob,
         "calibracion": calibration,
     }
     pe.CALIBRATION_FILE.write_text(json.dumps(calibration, indent=2, ensure_ascii=False), encoding="utf-8")
