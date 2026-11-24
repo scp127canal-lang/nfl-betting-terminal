@@ -1,0 +1,51 @@
+name: Recalibrar modelo cada semana
+
+# Cada miércoles: descarga las cuotas históricas de la semana nueva (tope 1,000 créditos;
+# lo ya descargado no se vuelve a pagar), reconstruye y califica las selecciones,
+# y recalibra por mercado (model_calibration.json).
+# model_tuning.py NO corre aquí (re-entrenar cada semana sería overfitting): ~1 vez al mes, a mano.
+on:
+  schedule:
+    - cron: "0 11 * * 3"
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: "Créditos máximos para descargar"
+        default: "1000"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: odds-refresh
+  cancel-in-progress: false
+
+jobs:
+  recalibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Descargar semana nueva, evaluar y recalibrar
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          PYTHONUTF8: "1"
+        run: python backtest.py all --budget ${{ inputs.budget || '1000' }}
+      - name: Guardar calibración en el repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backtest/ model_calibration.json
+          if git diff --cached --quiet; then echo "Sin cambios"; exit 0; fi
+          git commit -m "Modelo: recalibración semanal"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
