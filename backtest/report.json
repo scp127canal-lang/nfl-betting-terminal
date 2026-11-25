@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-23T23:59:08+00:00",
+  "generated_at": "2026-11-25T20:28:01+00:00",
   "weeks": [
     1,
     2,
@@ -13,178 +13,178 @@
     10,
     11
   ],
-  "n_lineas": 6924,
-  "n_oos": 6924,
+  "n_lineas": 7462,
+  "n_oos": 7462,
   "comparacion": {
     "mercado": {
-      "log_loss": 0.5864,
-      "brier": 0.2037
+      "log_loss": 0.5875,
+      "brier": 0.2041
     },
     "monte_carlo": {
-      "log_loss": 0.623,
-      "brier": 0.2158
+      "log_loss": 0.6244,
+      "brier": 0.2163
     },
     "mezcla_fija": {
-      "log_loss": 0.5866,
-      "brier": 0.2037
+      "log_loss": 0.5875,
+      "brier": 0.204
     },
     "calibrada": {
-      "log_loss": 0.5854,
-      "brier": 0.2032
+      "log_loss": 0.5864,
+      "brier": 0.2035
     }
   },
   "por_familia": [
     {
       "familia": "h2h",
-      "n": 161,
-      "mercado": 0.6047,
-      "monte_carlo": 0.6339,
-      "mezcla_fija": 0.6068,
-      "calibrada": 0.6047,
-      "real_pct": 50.9,
-      "mc_pct": 54.0,
-      "mercado_pct": 55.4
+      "n": 162,
+      "mercado": 0.6089,
+      "monte_carlo": 0.6364,
+      "mezcla_fija": 0.6106,
+      "calibrada": 0.6089,
+      "real_pct": 51.2,
+      "mc_pct": 53.9,
+      "mercado_pct": 55.2
     },
     {
       "familia": "passing_yards",
-      "n": 233,
+      "n": 252,
       "mercado": 0.6932,
-      "monte_carlo": 0.767,
-      "mezcla_fija": 0.7017,
-      "calibrada": 0.6912,
-      "real_pct": 54.1,
-      "mc_pct": 44.4,
+      "monte_carlo": 0.7691,
+      "mezcla_fija": 0.7033,
+      "calibrada": 0.6899,
+      "real_pct": 55.2,
+      "mc_pct": 44.3,
       "mercado_pct": 50.0
     },
     {
       "familia": "receiving_yards",
-      "n": 1460,
+      "n": 1578,
       "mercado": 0.6935,
-      "monte_carlo": 0.7396,
-      "mezcla_fija": 0.6912,
+      "monte_carlo": 0.7399,
+      "mezcla_fija": 0.6906,
       "calibrada": 0.6935,
-      "real_pct": 49.3,
-      "mc_pct": 45.9,
+      "real_pct": 49.2,
+      "mc_pct": 46.2,
       "mercado_pct": 50.0
     },
     {
       "familia": "receptions",
-      "n": 1433,
-      "mercado": 0.6824,
-      "monte_carlo": 0.7031,
-      "mezcla_fija": 0.6792,
-      "calibrada": 0.6812,
-      "real_pct": 48.4,
+      "n": 1547,
+      "mercado": 0.6827,
+      "monte_carlo": 0.7022,
+      "mezcla_fija": 0.6789,
+      "calibrada": 0.6808,
+      "real_pct": 48.0,
       "mc_pct": 44.9,
-      "mercado_pct": 48.9
+      "mercado_pct": 48.8
     },
     {
       "familia": "rushing_yards",
-      "n": 708,
-      "mercado": 0.6916,
-      "monte_carlo": 0.7399,
-      "mezcla_fija": 0.6933,
-      "calibrada": 0.6844,
-      "real_pct": 43.5,
-      "mc_pct": 44.2,
+      "n": 768,
+      "mercado": 0.692,
+      "monte_carlo": 0.7471,
+      "mezcla_fija": 0.6954,
+      "calibrada": 0.686,
+      "real_pct": 44.0,
+      "mc_pct": 44.5,
       "mercado_pct": 49.9
     },
     {
       "familia": "spreads",
-      "n": 155,
+      "n": 156,
       "mercado": 0.6933,
-      "monte_carlo": 0.7349,
-      "mezcla_fija": 0.6977,
+      "monte_carlo": 0.7334,
+      "mezcla_fija": 0.6973,
       "calibrada": 0.6933,
-      "real_pct": 43.9,
-      "mc_pct": 49.7,
+      "real_pct": 44.2,
+      "mc_pct": 49.8,
       "mercado_pct": 49.9
     },
     {
       "familia": "total_tds",
-      "n": 2614,
-      "mercado": 0.422,
-      "monte_carlo": 0.4554,
-      "mezcla_fija": 0.4237,
-      "calibrada": 0.422,
+      "n": 2838,
+      "mercado": 0.4261,
+      "monte_carlo": 0.459,
+      "mezcla_fija": 0.4274,
+      "calibrada": 0.4261,
       "real_pct": 19.2,
       "mc_pct": 18.1,
       "mercado_pct": 19.5
     },
     {
       "familia": "totals",
-      "n": 160,
+      "n": 161,
       "mercado": 0.6928,
-      "monte_carlo": 0.7338,
-      "mezcla_fija": 0.6957,
-      "calibrada": 0.6925,
-      "real_pct": 53.1,
-      "mc_pct": 51.1,
+      "monte_carlo": 0.7314,
+      "mezcla_fija": 0.6953,
+      "calibrada": 0.6928,
+      "real_pct": 52.8,
+      "mc_pct": 51.0,
       "mercado_pct": 50.0
     }
   ],
   "variantes": [
     {
       "familia": "h2h",
-      "n": 161,
-      "ll_completo": 0.6069,
-      "ll_sesgo": 0.6057,
-      "ll_mercado": 0.6047,
+      "n": 162,
+      "ll_completo": 0.6112,
+      "ll_sesgo": 0.6101,
+      "ll_mercado": 0.6089,
       "elegida": "mercado"
     },
     {
       "familia": "passing_yards",
-      "n": 233,
-      "ll_completo": 0.7019,
-      "ll_sesgo": 0.6912,
+      "n": 252,
+      "ll_completo": 0.7002,
+      "ll_sesgo": 0.6899,
       "ll_mercado": 0.6932,
       "elegida": "sesgo"
     },
     {
       "familia": "receiving_yards",
-      "n": 1460,
-      "ll_completo": 0.6946,
-      "ll_sesgo": 0.6939,
+      "n": 1578,
+      "ll_completo": 0.694,
+      "ll_sesgo": 0.6938,
       "ll_mercado": 0.6935,
       "elegida": "mercado"
     },
     {
       "familia": "receptions",
-      "n": 1433,
-      "ll_completo": 0.6812,
-      "ll_sesgo": 0.6827,
-      "ll_mercado": 0.6824,
+      "n": 1547,
+      "ll_completo": 0.6808,
+      "ll_sesgo": 0.683,
+      "ll_mercado": 0.6827,
       "elegida": "completo"
     },
     {
       "familia": "rushing_yards",
-      "n": 708,
-      "ll_completo": 0.6897,
-      "ll_sesgo": 0.6844,
-      "ll_mercado": 0.6916,
+      "n": 768,
+      "ll_completo": 0.6911,
+      "ll_sesgo": 0.686,
+      "ll_mercado": 0.692,
       "elegida": "sesgo"
     },
     {
       "familia": "spreads",
-      "n": 155,
-      "ll_completo": 0.6988,
+      "n": 156,
+      "ll_completo": 0.6985,
       "ll_sesgo": 0.6933,
       "ll_mercado": 0.6933,
       "elegida": "sesgo"
     },
     {
       "familia": "total_tds",
-      "n": 2614,
-      "ll_completo": 0.4241,
-      "ll_sesgo": 0.4222,
-      "ll_mercado": 0.422,
+      "n": 2838,
+      "ll_completo": 0.428,
+      "ll_sesgo": 0.4264,
+      "ll_mercado": 0.4261,
       "elegida": "mercado"
     },
     {
       "familia": "totals",
-      "n": 160,
-      "ll_completo": 0.6981,
-      "ll_sesgo": 0.6925,
+      "n": 161,
+      "ll_completo": 0.6979,
+      "ll_sesgo": 0.6928,
       "ll_mercado": 0.6928,
       "elegida": "sesgo"
     }
@@ -193,60 +193,62 @@
     "seleccion_semanas": "< 6",
     "prueba_semanas": ">= 6",
     "elegidas_1a_mitad": [
+      "receptions",
       "rushing_yards"
     ],
     "prueba_2a_mitad": {
-      "n": 482,
-      "acierto_pct": 54.8,
-      "prob_media_pct": 54.9,
-      "unidades": 14.23,
-      "roi_pct": 3.0
+      "n": 743,
+      "acierto_pct": 54.1,
+      "prob_media_pct": 55.0,
+      "unidades": 26.44,
+      "roi_pct": 3.6
     },
     "prueba_2a_mitad_todas": {
-      "n": 796,
+      "n": 743,
       "acierto_pct": 54.1,
-      "prob_media_pct": 55.1,
-      "unidades": 26.66,
-      "roi_pct": 3.3
+      "prob_media_pct": 55.0,
+      "unidades": 26.44,
+      "roi_pct": 3.6
     },
     "validadas_final": [
+      "receptions",
       "rushing_yards"
     ]
   },
   "calibracion_mercado": [
     {
       "rango": "(-0.001, 0.2]",
-      "n": 1581,
+      "n": 1711,
       "esperado_pct": 10.0,
-      "real_pct": 9.6
+      "real_pct": 10.0
     },
     {
       "rango": "(0.2, 0.3]",
-      "n": 503,
+      "n": 550,
       "esperado_pct": 24.4,
       "real_pct": 22.9
     },
     {
       "rango": "(0.3, 0.4]",
-      "n": 435,
-      "esperado_pct": 35.3,
-      "real_pct": 39.3
+      "n": 474,
+      "esperado_pct": 35.4,
+      "real_pct": 38.4
     },
     {
       "rango": "(0.4, 0.5]",
-      "n": 2723,
+      "n": 2949,
       "esperado_pct": 48.3,
-      "real_pct": 46.7
+      "real_pct": 46.8
     },
     {
       "rango": "(0.5, 0.6]",
-      "n": 1505,
+      "n": 1597,
       "esperado_pct": 52.3,
-      "real_pct": 49.6
+      "real_pct": 49.4
     },
     {
       "rango": "(0.6, 0.7]",
-      "n": 128,
+      "n": 132,
       "esperado_pct": 63.2,
       "real_pct": 72.7
     },
@@ -266,95 +268,95 @@
   "calibracion_mc": [
     {
       "rango": "(-0.001, 0.2]",
-      "n": 1802,
+      "n": 1949,
       "esperado_pct": 9.0,
-      "real_pct": 15.1
+      "real_pct": 15.2
     },
     {
       "rango": "(0.2, 0.3]",
-      "n": 803,
+      "n": 878,
       "esperado_pct": 25.1,
-      "real_pct": 35.1
+      "real_pct": 34.4
     },
     {
       "rango": "(0.3, 0.4]",
-      "n": 1129,
+      "n": 1207,
       "esperado_pct": 35.4,
-      "real_pct": 40.9
+      "real_pct": 41.0
     },
     {
       "rango": "(0.4, 0.5]",
-      "n": 1473,
+      "n": 1577,
       "esperado_pct": 44.9,
-      "real_pct": 44.8
+      "real_pct": 45.0
     },
     {
       "rango": "(0.5, 0.6]",
-      "n": 1054,
+      "n": 1120,
       "esperado_pct": 54.5,
       "real_pct": 50.2
     },
     {
       "rango": "(0.6, 0.7]",
-      "n": 481,
+      "n": 524,
       "esperado_pct": 64.4,
-      "real_pct": 54.3
+      "real_pct": 54.0
     },
     {
       "rango": "(0.7, 0.8]",
-      "n": 143,
-      "esperado_pct": 74.0,
-      "real_pct": 64.3
+      "n": 158,
+      "esperado_pct": 74.1,
+      "real_pct": 63.3
     },
     {
       "rango": "(0.8, 1.0]",
-      "n": 39,
-      "esperado_pct": 85.8,
-      "real_pct": 69.2
+      "n": 49,
+      "esperado_pct": 85.9,
+      "real_pct": 61.2
     }
   ],
   "calibracion_ajustada": [
     {
       "rango": "(-0.001, 0.2]",
-      "n": 1581,
+      "n": 1711,
       "esperado_pct": 10.0,
-      "real_pct": 9.6
+      "real_pct": 10.0
     },
     {
       "rango": "(0.2, 0.3]",
-      "n": 518,
-      "esperado_pct": 24.5,
+      "n": 569,
+      "esperado_pct": 24.4,
       "real_pct": 24.1
     },
     {
       "rango": "(0.3, 0.4]",
-      "n": 515,
+      "n": 568,
       "esperado_pct": 35.3,
-      "real_pct": 36.7
+      "real_pct": 35.9
     },
     {
       "rango": "(0.4, 0.5]",
-      "n": 2592,
-      "esperado_pct": 47.1,
+      "n": 2812,
+      "esperado_pct": 47.2,
       "real_pct": 46.1
     },
     {
       "rango": "(0.5, 0.6]",
-      "n": 1505,
+      "n": 1582,
       "esperado_pct": 52.4,
-      "real_pct": 51.1
+      "real_pct": 51.4
     },
     {
       "rango": "(0.6, 0.7]",
-      "n": 157,
+      "n": 163,
       "esperado_pct": 64.1,
-      "real_pct": 71.3
+      "real_pct": 71.8
     },
     {
       "rango": "(0.7, 0.8]",
-      "n": 44,
+      "n": 45,
       "esperado_pct": 74.1,
-      "real_pct": 72.7
+      "real_pct": 71.1
     },
     {
       "rango": "(0.8, 1.0]",
@@ -369,214 +371,214 @@
     "grid": [
       {
         "umbral_ev": 0,
-        "n": 1365,
-        "acierto_pct": 53.9,
+        "n": 1514,
+        "acierto_pct": 54.2,
         "prob_media_pct": 55.0,
-        "unidades": 37.6,
-        "roi_pct": 2.8
+        "unidades": 49.37,
+        "roi_pct": 3.3
       },
       {
         "umbral_ev": 1,
-        "n": 1278,
-        "acierto_pct": 54.5,
-        "prob_media_pct": 55.2,
-        "unidades": 51.31,
-        "roi_pct": 4.0
+        "n": 1385,
+        "acierto_pct": 54.7,
+        "prob_media_pct": 55.1,
+        "unidades": 59.83,
+        "roi_pct": 4.3
       },
       {
         "umbral_ev": 2,
-        "n": 1116,
-        "acierto_pct": 54.1,
+        "n": 1129,
+        "acierto_pct": 54.0,
         "prob_media_pct": 55.4,
-        "unidades": 37.12,
+        "unidades": 37.56,
         "roi_pct": 3.3
       },
       {
         "umbral_ev": 3,
-        "n": 839,
-        "acierto_pct": 53.0,
-        "prob_media_pct": 55.6,
-        "unidades": 15.34,
-        "roi_pct": 1.8
+        "n": 677,
+        "acierto_pct": 53.8,
+        "prob_media_pct": 56.0,
+        "unidades": 24.7,
+        "roi_pct": 3.6
       },
       {
         "umbral_ev": 4,
-        "n": 455,
-        "acierto_pct": 54.3,
-        "prob_media_pct": 56.2,
-        "unidades": 27.05,
-        "roi_pct": 5.9
+        "n": 451,
+        "acierto_pct": 54.1,
+        "prob_media_pct": 56.5,
+        "unidades": 25.18,
+        "roi_pct": 5.6
       },
       {
         "umbral_ev": 5,
-        "n": 345,
-        "acierto_pct": 53.9,
-        "prob_media_pct": 56.7,
-        "unidades": 19.85,
-        "roi_pct": 5.8
+        "n": 376,
+        "acierto_pct": 54.8,
+        "prob_media_pct": 57.1,
+        "unidades": 27.25,
+        "roi_pct": 7.2
       },
       {
         "umbral_ev": 6,
-        "n": 289,
-        "acierto_pct": 53.3,
-        "prob_media_pct": 57.3,
-        "unidades": 14.19,
-        "roi_pct": 4.9
+        "n": 322,
+        "acierto_pct": 54.7,
+        "prob_media_pct": 57.6,
+        "unidades": 23.15,
+        "roi_pct": 7.2
       },
       {
         "umbral_ev": 8,
-        "n": 213,
-        "acierto_pct": 53.1,
-        "prob_media_pct": 58.2,
-        "unidades": 9.36,
-        "roi_pct": 4.4
+        "n": 247,
+        "acierto_pct": 52.2,
+        "prob_media_pct": 58.1,
+        "unidades": 7.72,
+        "roi_pct": 3.1
       },
       {
         "umbral_ev": 10,
-        "n": 160,
-        "acierto_pct": 53.8,
+        "n": 183,
+        "acierto_pct": 53.6,
         "prob_media_pct": 59.0,
-        "unidades": 10.58,
-        "roi_pct": 6.6
+        "unidades": 11.96,
+        "roi_pct": 6.5
       },
       {
         "umbral_ev": 12,
-        "n": 115,
-        "acierto_pct": 57.4,
-        "prob_media_pct": 59.9,
-        "unidades": 17.26,
-        "roi_pct": 15.0
+        "n": 140,
+        "acierto_pct": 56.4,
+        "prob_media_pct": 60.3,
+        "unidades": 16.08,
+        "roi_pct": 11.5
       },
       {
         "umbral_ev": 15,
-        "n": 80,
-        "acierto_pct": 56.2,
-        "prob_media_pct": 60.4,
-        "unidades": 11.67,
-        "roi_pct": 14.6
+        "n": 89,
+        "acierto_pct": 57.3,
+        "prob_media_pct": 60.7,
+        "unidades": 13.69,
+        "roi_pct": 15.4
       }
     ],
     "topes": [
       {
         "tope_ev": 10,
-        "n": 956,
-        "acierto_pct": 54.2,
+        "n": 946,
+        "acierto_pct": 54.1,
         "prob_media_pct": 54.7,
-        "unidades": 26.54,
-        "roi_pct": 2.8,
-        "fuera_roi_pct": 6.6,
-        "fuera_n": 160
+        "unidades": 25.6,
+        "roi_pct": 2.7,
+        "fuera_roi_pct": 6.5,
+        "fuera_n": 183
       },
       {
         "tope_ev": 15,
-        "n": 1036,
-        "acierto_pct": 54.0,
-        "prob_media_pct": 55.0,
-        "unidades": 25.45,
-        "roi_pct": 2.5,
-        "fuera_roi_pct": 14.6,
-        "fuera_n": 80
+        "n": 1040,
+        "acierto_pct": 53.8,
+        "prob_media_pct": 54.9,
+        "unidades": 23.87,
+        "roi_pct": 2.3,
+        "fuera_roi_pct": 15.4,
+        "fuera_n": 89
       },
       {
         "tope_ev": 20,
-        "n": 1077,
-        "acierto_pct": 54.0,
+        "n": 1087,
+        "acierto_pct": 54.1,
         "prob_media_pct": 55.1,
-        "unidades": 29.87,
-        "roi_pct": 2.8,
-        "fuera_roi_pct": 18.6,
-        "fuera_n": 39
+        "unidades": 33.31,
+        "roi_pct": 3.1,
+        "fuera_roi_pct": 10.1,
+        "fuera_n": 42
       },
       {
         "tope_ev": 25,
-        "n": 1097,
-        "acierto_pct": 54.2,
-        "prob_media_pct": 55.2,
-        "unidades": 37.2,
-        "roi_pct": 3.4,
-        "fuera_roi_pct": -0.4,
-        "fuera_n": 19
+        "n": 1111,
+        "acierto_pct": 54.1,
+        "prob_media_pct": 55.3,
+        "unidades": 36.64,
+        "roi_pct": 3.3,
+        "fuera_roi_pct": 5.1,
+        "fuera_n": 18
       },
       {
         "tope_ev": 35,
-        "n": 1112,
-        "acierto_pct": 54.1,
-        "prob_media_pct": 55.3,
-        "unidades": 36.53,
+        "n": 1125,
+        "acierto_pct": 54.0,
+        "prob_media_pct": 55.4,
+        "unidades": 36.97,
         "roi_pct": 3.3,
         "fuera_roi_pct": 14.7,
         "fuera_n": 4
       },
       {
         "tope_ev": 50,
-        "n": 1116,
-        "acierto_pct": 54.1,
+        "n": 1129,
+        "acierto_pct": 54.0,
         "prob_media_pct": 55.4,
-        "unidades": 37.12,
+        "unidades": 37.56,
         "roi_pct": 3.3,
         "fuera_roi_pct": null,
         "fuera_n": 0
       }
     ],
     "resultado": {
-      "n": 1097,
-      "acierto_pct": 54.2,
-      "prob_media_pct": 55.2,
-      "unidades": 37.2,
-      "roi_pct": 3.4
+      "n": 1111,
+      "acierto_pct": 54.1,
+      "prob_media_pct": 55.3,
+      "unidades": 36.64,
+      "roi_pct": 3.3
     },
     "por_familia": [
       {
         "familia": "receptions",
-        "n": 472,
-        "acierto_pct": 52.8,
-        "prob_media_pct": 55.7,
-        "unidades": 11.86,
-        "roi_pct": 2.5,
-        "validada": false
+        "n": 529,
+        "acierto_pct": 53.9,
+        "prob_media_pct": 55.9,
+        "unidades": 24.2,
+        "roi_pct": 4.6,
+        "validada": true
       },
       {
         "familia": "rushing_yards",
-        "n": 625,
-        "acierto_pct": 55.4,
-        "prob_media_pct": 54.9,
-        "unidades": 25.34,
-        "roi_pct": 4.1,
+        "n": 582,
+        "acierto_pct": 54.3,
+        "prob_media_pct": 54.7,
+        "unidades": 12.44,
+        "roi_pct": 2.1,
         "validada": true
       }
     ],
     "por_cuota": [
       {
         "cuotas": "1.00–1.70",
-        "n": 88,
-        "acierto_pct": 60.2,
-        "prob_media_pct": 66.7,
-        "unidades": -3.04,
-        "roi_pct": -3.5
+        "n": 104,
+        "acierto_pct": 61.5,
+        "prob_media_pct": 67.0,
+        "unidades": -1.43,
+        "roi_pct": -1.4
       },
       {
         "cuotas": "1.70–2.00",
-        "n": 788,
-        "acierto_pct": 55.7,
-        "prob_media_pct": 55.8,
-        "unidades": 33.0,
-        "roi_pct": 4.2
+        "n": 761,
+        "acierto_pct": 54.9,
+        "prob_media_pct": 55.7,
+        "unidades": 20.75,
+        "roi_pct": 2.7
       },
       {
         "cuotas": "2.00–2.50",
-        "n": 201,
-        "acierto_pct": 47.3,
-        "prob_media_pct": 49.6,
-        "unidades": 5.78,
-        "roi_pct": 2.9
+        "n": 223,
+        "acierto_pct": 49.3,
+        "prob_media_pct": 49.7,
+        "unidades": 16.36,
+        "roi_pct": 7.3
       },
       {
         "cuotas": "2.50–3.50",
-        "n": 20,
-        "acierto_pct": 40.0,
-        "prob_media_pct": 40.3,
-        "unidades": 1.46,
-        "roi_pct": 7.3
+        "n": 23,
+        "acierto_pct": 39.1,
+        "prob_media_pct": 40.7,
+        "unidades": 0.96,
+        "roi_pct": 4.2
       },
       {
         "cuotas": "> 3.50",
@@ -590,183 +592,183 @@
     "por_lado": [
       {
         "lado": "over",
-        "n": 194,
-        "acierto_pct": 53.1,
+        "n": 211,
+        "acierto_pct": 54.0,
         "prob_media_pct": 53.7,
-        "unidades": 11.17,
-        "roi_pct": 5.8
+        "unidades": 17.54,
+        "roi_pct": 8.3
       },
       {
         "lado": "under",
-        "n": 903,
-        "acierto_pct": 54.5,
+        "n": 900,
+        "acierto_pct": 54.1,
         "prob_media_pct": 55.6,
-        "unidades": 26.03,
-        "roi_pct": 2.9
+        "unidades": 19.1,
+        "roi_pct": 2.1
       }
     ],
     "por_semana": [
       {
         "semana": 3,
-        "n": 75,
-        "acierto_pct": 56.0,
-        "prob_media_pct": 55.8,
-        "unidades": 5.33,
-        "roi_pct": 7.1
+        "n": 169,
+        "acierto_pct": 56.2,
+        "prob_media_pct": 55.7,
+        "unidades": 11.58,
+        "roi_pct": 6.9
       },
       {
         "semana": 4,
-        "n": 87,
-        "acierto_pct": 56.3,
-        "prob_media_pct": 55.9,
-        "unidades": 8.2,
-        "roi_pct": 9.4
+        "n": 71,
+        "acierto_pct": 54.9,
+        "prob_media_pct": 56.6,
+        "unidades": 5.08,
+        "roi_pct": 7.2
       },
       {
         "semana": 5,
-        "n": 139,
-        "acierto_pct": 52.5,
-        "prob_media_pct": 55.4,
-        "unidades": -2.99,
-        "roi_pct": -2.2
+        "n": 128,
+        "acierto_pct": 50.8,
+        "prob_media_pct": 55.3,
+        "unidades": -6.46,
+        "roi_pct": -5.0
       },
       {
         "semana": 6,
-        "n": 132,
-        "acierto_pct": 57.6,
-        "prob_media_pct": 54.4,
-        "unidades": 14.4,
-        "roi_pct": 10.9
+        "n": 80,
+        "acierto_pct": 58.8,
+        "prob_media_pct": 54.8,
+        "unidades": 11.06,
+        "roi_pct": 13.8
       },
       {
         "semana": 7,
         "n": 133,
-        "acierto_pct": 54.9,
-        "prob_media_pct": 55.0,
-        "unidades": 6.72,
-        "roi_pct": 5.1
+        "acierto_pct": 54.1,
+        "prob_media_pct": 54.8,
+        "unidades": 5.1,
+        "roi_pct": 3.8
       },
       {
         "semana": 8,
-        "n": 136,
-        "acierto_pct": 58.1,
-        "prob_media_pct": 54.7,
-        "unidades": 12.91,
-        "roi_pct": 9.5
+        "n": 130,
+        "acierto_pct": 56.9,
+        "prob_media_pct": 54.5,
+        "unidades": 9.69,
+        "roi_pct": 7.5
       },
       {
         "semana": 9,
         "n": 132,
-        "acierto_pct": 58.3,
-        "prob_media_pct": 54.1,
-        "unidades": 17.47,
-        "roi_pct": 13.2
+        "acierto_pct": 59.1,
+        "prob_media_pct": 53.8,
+        "unidades": 19.9,
+        "roi_pct": 15.1
       },
       {
         "semana": 10,
-        "n": 145,
-        "acierto_pct": 49.0,
-        "prob_media_pct": 56.3,
-        "unidades": -10.02,
-        "roi_pct": -6.9
+        "n": 136,
+        "acierto_pct": 51.5,
+        "prob_media_pct": 56.2,
+        "unidades": -2.61,
+        "roi_pct": -1.9
       },
       {
         "semana": 11,
-        "n": 118,
-        "acierto_pct": 46.6,
-        "prob_media_pct": 56.1,
-        "unidades": -14.82,
-        "roi_pct": -12.6
+        "n": 132,
+        "acierto_pct": 46.2,
+        "prob_media_pct": 55.8,
+        "unidades": -16.7,
+        "roi_pct": -12.7
       }
     ],
     "sin_modelo_todas": {
-      "n": 6924,
+      "n": 7462,
       "acierto_pct": 39.7,
-      "prob_media_pct": 39.9,
-      "unidades": -299.73,
-      "roi_pct": -4.3
+      "prob_media_pct": 39.8,
+      "unidades": -266.57,
+      "roi_pct": -3.6
     }
   },
   "lift": [
     {
       "lift_weight": 0.0,
-      "log_loss": 0.5505,
-      "brier": 0.1829,
-      "esperado_pct": 24.45,
-      "real_pct": 24.66
+      "log_loss": 0.5509,
+      "brier": 0.1831,
+      "esperado_pct": 24.49,
+      "real_pct": 24.74
     },
     {
       "lift_weight": 0.25,
-      "log_loss": 0.5498,
-      "brier": 0.1827,
-      "esperado_pct": 24.42,
-      "real_pct": 24.66
+      "log_loss": 0.5502,
+      "brier": 0.1829,
+      "esperado_pct": 24.46,
+      "real_pct": 24.74
     },
     {
       "lift_weight": 0.5,
-      "log_loss": 0.5495,
-      "brier": 0.1826,
-      "esperado_pct": 24.41,
-      "real_pct": 24.66
+      "log_loss": 0.55,
+      "brier": 0.1828,
+      "esperado_pct": 24.45,
+      "real_pct": 24.74
     },
     {
       "lift_weight": 0.75,
-      "log_loss": 0.5496,
-      "brier": 0.1826,
-      "esperado_pct": 24.44,
-      "real_pct": 24.66
+      "log_loss": 0.5502,
+      "brier": 0.1829,
+      "esperado_pct": 24.48,
+      "real_pct": 24.74
     },
     {
       "lift_weight": 1.0,
-      "log_loss": 0.55,
-      "brier": 0.1828,
-      "esperado_pct": 24.48,
-      "real_pct": 24.66
+      "log_loss": 0.5506,
+      "brier": 0.183,
+      "esperado_pct": 24.52,
+      "real_pct": 24.74
     }
   ],
   "combinadas": {
-    "variante_elegida": "solo_validadas",
+    "variante_elegida": "todas_patas_ev_pos",
     "variantes": {
       "todas_familias": [
         {
           "nivel": "ALTO",
-          "n": 56,
-          "acierto_pct": 1.8,
-          "prob_media_pct": 7.1,
-          "ev_medio_pct": 96.5,
-          "unidades": -28.2,
-          "roi_pct": -50.4,
-          "roi_recorte_sgp_pct": -57.8
+          "n": 54,
+          "acierto_pct": 3.7,
+          "prob_media_pct": 7.8,
+          "ev_medio_pct": 99.9,
+          "unidades": -9.98,
+          "roi_pct": -18.5,
+          "roi_recorte_sgp_pct": -30.7
         },
         {
           "nivel": "BAJO",
-          "n": 10,
-          "acierto_pct": 10.0,
-          "prob_media_pct": 52.3,
-          "ev_medio_pct": 37.5,
-          "unidades": -6.48,
-          "roi_pct": -64.8,
-          "roi_recorte_sgp_pct": -68.6
+          "n": 12,
+          "acierto_pct": 8.3,
+          "prob_media_pct": 52.6,
+          "ev_medio_pct": 38.1,
+          "unidades": -8.48,
+          "roi_pct": -70.7,
+          "roi_recorte_sgp_pct": -73.8
         },
         {
           "nivel": "MODERADO",
           "n": 54,
-          "acierto_pct": 29.6,
+          "acierto_pct": 25.9,
           "prob_media_pct": 32.7,
-          "ev_medio_pct": 36.7,
-          "unidades": 10.45,
-          "roi_pct": 19.4,
-          "roi_recorte_sgp_pct": 12.5
+          "ev_medio_pct": 38.2,
+          "unidades": 0.2,
+          "roi_pct": 0.4,
+          "roi_recorte_sgp_pct": -4.1
         },
         {
           "nivel": "TOTAL",
           "n": 120,
-          "acierto_pct": 15.0,
-          "prob_media_pct": 22.4,
-          "ev_medio_pct": 64.7,
-          "unidades": -24.23,
-          "roi_pct": -20.2,
-          "roi_recorte_sgp_pct": -27.1
+          "acierto_pct": 14.2,
+          "prob_media_pct": 23.5,
+          "ev_medio_pct": 66.0,
+          "unidades": -18.25,
+          "roi_pct": -15.2,
+          "roi_recorte_sgp_pct": -23.1
         }
       ],
       "todas_patas_ev_pos": [
@@ -774,90 +776,771 @@
           "nivel": "ALTO",
           "n": 27,
           "acierto_pct": 3.7,
-          "prob_media_pct": 8.3,
+          "prob_media_pct": 9.3,
           "ev_medio_pct": 100.0,
-          "unidades": 0.8,
-          "roi_pct": 3.0,
-          "roi_recorte_sgp_pct": -12.5
+          "unidades": -7.61,
+          "roi_pct": -28.2,
+          "roi_recorte_sgp_pct": -39.0
         },
         {
           "nivel": "BAJO",
-          "n": 10,
-          "acierto_pct": 10.0,
-          "prob_media_pct": 52.3,
-          "ev_medio_pct": 37.5,
-          "unidades": -6.48,
-          "roi_pct": -64.8,
-          "roi_recorte_sgp_pct": -68.6
+          "n": 12,
+          "acierto_pct": 8.3,
+          "prob_media_pct": 52.6,
+          "ev_medio_pct": 38.1,
+          "unidades": -8.48,
+          "roi_pct": -70.7,
+          "roi_recorte_sgp_pct": -73.8
         },
         {
           "nivel": "MODERADO",
           "n": 27,
-          "acierto_pct": 33.3,
-          "prob_media_pct": 32.8,
-          "ev_medio_pct": 53.2,
-          "unidades": 12.81,
-          "roi_pct": 47.4,
-          "roi_recorte_sgp_pct": 39.1
+          "acierto_pct": 29.6,
+          "prob_media_pct": 32.6,
+          "ev_medio_pct": 56.0,
+          "unidades": 6.85,
+          "roi_pct": 25.4,
+          "roi_recorte_sgp_pct": 19.4
         },
         {
           "nivel": "TOTAL",
-          "n": 64,
-          "acierto_pct": 17.2,
-          "prob_media_pct": 25.5,
-          "ev_medio_pct": 70.5,
-          "unidades": 7.13,
-          "roi_pct": 11.1,
-          "roi_recorte_sgp_pct": 0.5
+          "n": 66,
+          "acierto_pct": 15.2,
+          "prob_media_pct": 26.7,
+          "ev_medio_pct": 70.8,
+          "unidades": -9.24,
+          "roi_pct": -14.0,
+          "roi_recorte_sgp_pct": -21.4
         }
       ],
       "solo_validadas": [
         {
           "nivel": "ALTO",
           "n": 27,
-          "acierto_pct": 11.1,
-          "prob_media_pct": 6.3,
-          "ev_medio_pct": 24.9,
-          "unidades": 80.71,
-          "roi_pct": 298.9,
-          "roi_recorte_sgp_pct": 246.1
+          "acierto_pct": 3.7,
+          "prob_media_pct": 9.3,
+          "ev_medio_pct": 100.0,
+          "unidades": -7.61,
+          "roi_pct": -28.2,
+          "roi_recorte_sgp_pct": -39.0
+        },
+        {
+          "nivel": "BAJO",
+          "n": 12,
+          "acierto_pct": 8.3,
+          "prob_media_pct": 52.6,
+          "ev_medio_pct": 38.1,
+          "unidades": -8.48,
+          "roi_pct": -70.7,
+          "roi_recorte_sgp_pct": -73.8
         },
         {
           "nivel": "MODERADO",
-          "n": 24,
-          "acierto_pct": 41.7,
-          "prob_media_pct": 31.0,
-          "ev_medio_pct": 10.9,
-          "unidades": 11.87,
-          "roi_pct": 49.5,
-          "roi_recorte_sgp_pct": 40.5
+          "n": 27,
+          "acierto_pct": 29.6,
+          "prob_media_pct": 32.6,
+          "ev_medio_pct": 56.0,
+          "unidades": 6.85,
+          "roi_pct": 25.4,
+          "roi_recorte_sgp_pct": 19.4
         },
         {
           "nivel": "TOTAL",
-          "n": 51,
-          "acierto_pct": 25.5,
-          "prob_media_pct": 17.9,
-          "ev_medio_pct": 18.3,
-          "unidades": 92.58,
-          "roi_pct": 181.5,
-          "roi_recorte_sgp_pct": 149.4
+          "n": 66,
+          "acierto_pct": 15.2,
+          "prob_media_pct": 26.7,
+          "ev_medio_pct": 70.8,
+          "unidades": -9.24,
+          "roi_pct": -14.0,
+          "roi_recorte_sgp_pct": -21.4
         }
       ]
     },
     "por_modo": [
       {
         "modo": "players",
-        "n": 51,
-        "acierto_pct": 25.5,
-        "prob_media_pct": 17.9,
-        "unidades": 92.58,
-        "roi_pct": 181.5
+        "n": 66,
+        "acierto_pct": 15.2,
+        "prob_media_pct": 26.7,
+        "unidades": -9.24,
+        "roi_pct": -14.0
       }
     ]
   },
+  "alta_probabilidad": {
+    "regla": {
+      "min_prob": 0.6,
+      "min_ev": -2.0,
+      "min_odds": 1.25,
+      "max_legs": 3,
+      "pool": 10,
+      "max_credible_ev": 25.0
+    },
+    "resumen": {
+      "n": 268,
+      "acierto_pct": 67.5,
+      "prob_media_pct": 64.6,
+      "unidades": 29.91,
+      "roi_pct": 11.2
+    },
+    "primera_mitad": {
+      "semanas": "< 6",
+      "n": 102,
+      "acierto_pct": 67.6,
+      "prob_media_pct": 65.1,
+      "unidades": 11.71,
+      "roi_pct": 11.5
+    },
+    "segunda_mitad": {
+      "semanas": ">= 6",
+      "n": 166,
+      "acierto_pct": 67.5,
+      "prob_media_pct": 64.3,
+      "unidades": 18.2,
+      "roi_pct": 11.0
+    },
+    "comprobada": true,
+    "por_familia": [
+      {
+        "familia": "receptions",
+        "n": 259,
+        "acierto_pct": 67.6,
+        "prob_media_pct": 64.6,
+        "unidades": 29.51,
+        "roi_pct": 11.4
+      },
+      {
+        "familia": "rushing_yards",
+        "n": 8,
+        "acierto_pct": 75.0,
+        "prob_media_pct": 63.7,
+        "unidades": 1.4,
+        "roi_pct": 17.5
+      },
+      {
+        "familia": "total_tds",
+        "n": 1,
+        "acierto_pct": 0.0,
+        "prob_media_pct": 65.0,
+        "unidades": -1.0,
+        "roi_pct": -100.0
+      }
+    ],
+    "por_semana": [
+      {
+        "semana": 3,
+        "n": 37,
+        "acierto_pct": 73.0,
+        "prob_media_pct": 64.9,
+        "unidades": 7.65,
+        "roi_pct": 20.7
+      },
+      {
+        "semana": 4,
+        "n": 39,
+        "acierto_pct": 64.1,
+        "prob_media_pct": 65.6,
+        "unidades": 1.95,
+        "roi_pct": 5.0
+      },
+      {
+        "semana": 5,
+        "n": 26,
+        "acierto_pct": 65.4,
+        "prob_media_pct": 64.5,
+        "unidades": 2.11,
+        "roi_pct": 8.1
+      },
+      {
+        "semana": 6,
+        "n": 32,
+        "acierto_pct": 75.0,
+        "prob_media_pct": 63.7,
+        "unidades": 6.92,
+        "roi_pct": 21.6
+      },
+      {
+        "semana": 7,
+        "n": 24,
+        "acierto_pct": 66.7,
+        "prob_media_pct": 63.4,
+        "unidades": 2.44,
+        "roi_pct": 10.2
+      },
+      {
+        "semana": 8,
+        "n": 26,
+        "acierto_pct": 80.8,
+        "prob_media_pct": 63.7,
+        "unidades": 8.64,
+        "roi_pct": 33.2
+      },
+      {
+        "semana": 9,
+        "n": 20,
+        "acierto_pct": 90.0,
+        "prob_media_pct": 62.5,
+        "unidades": 10.26,
+        "roi_pct": 51.3
+      },
+      {
+        "semana": 10,
+        "n": 33,
+        "acierto_pct": 42.4,
+        "prob_media_pct": 67.1,
+        "unidades": -10.56,
+        "roi_pct": -32.0
+      },
+      {
+        "semana": 11,
+        "n": 31,
+        "acierto_pct": 61.3,
+        "prob_media_pct": 64.4,
+        "unidades": 0.5,
+        "roi_pct": 1.6
+      }
+    ],
+    "sencillas_ic90": [
+      0.1,
+      22.2
+    ],
+    "combinadas": [
+      {
+        "patas": 2,
+        "n": 36,
+        "semanas": 9,
+        "ganadas": 17,
+        "prob_media_pct": 46.5,
+        "acierto_pct": 47.2,
+        "cuota_media": 2.67,
+        "roi_pct": 29.7,
+        "roi_ic90": [
+          -11.5,
+          70.4
+        ],
+        "roi_esperado_por_sencillas_pct": 23.7,
+        "detalle": [
+          {
+            "week": 3,
+            "p": 0.5249870305724851,
+            "odds": 2.7224999999999997,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Skyy Moore Under 1.5 recepciones + Terrance Ferguson Under 4.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.501120239178799,
+            "odds": 2.7378,
+            "won": 1.0,
+            "profit": 1.7378,
+            "labels": "LaJohntay Wester Under 1.5 recepciones + Jaylen Warren Under 4.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.49261858964835814,
+            "odds": 2.737,
+            "won": 1.0,
+            "profit": 1.737,
+            "labels": "Kenny Gainwell Over 1.5 recepciones + Jaylin Noel Under 2.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.49439527987148163,
+            "odds": 2.5277000000000003,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Chris Brooks Under 1.5 recepciones + Jordan Addison Under 3.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.5081427755316112,
+            "odds": 2.6950000000000003,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Darius Cooper Under 2.5 recepciones + Jordan Addison Under 4.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.5380666620370086,
+            "odds": 2.2896,
+            "won": 1.0,
+            "profit": 1.2896,
+            "labels": "Jaylen Wright Under 1.5 recepciones + Kenny Gainwell Over 1.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.5197202461326943,
+            "odds": 2.2800000000000002,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Cody White Under 1.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.4774755599876904,
+            "odds": 2.2785,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Kendre Miller Under 1.5 recepciones + Adam Trautman Over 0.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.4620207538594127,
+            "odds": 2.9558999999999997,
+            "won": 1.0,
+            "profit": 1.9558999999999997,
+            "labels": "Tre Harris Under 4.5 recepciones + Braelon Allen Under 2.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.43304647838930527,
+            "odds": 2.9754,
+            "won": 1.0,
+            "profit": 1.9754,
+            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.4621394396179718,
+            "odds": 2.64,
+            "won": 1.0,
+            "profit": 1.6400000000000001,
+            "labels": "Kenny Gainwell Over 1.5 recepciones + Mason Taylor Over 1.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.48687688151459063,
+            "odds": 2.3328,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Kyle Williams Under 1.5 recepciones + Roman Wilson Under 3.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.44357135163249944,
+            "odds": 2.8674000000000004,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Mason Taylor Over 1.5 recepciones + Xavier Worthy Under 4.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.46048182217393363,
+            "odds": 2.5217,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Davis Allen Over 0.5 recepciones + Charlie Kolar Under 2.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.4563490844593729,
+            "odds": 2.2952,
+            "won": 1.0,
+            "profit": 1.2952,
+            "labels": "Brandin Cooks Under 2.5 recepciones + Jalen Nailor Under 2.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.4568369841275641,
+            "odds": 2.262,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Foster Moreau Over 0.5 recepciones + Roschon Johnson Under 1.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.4116101957946898,
+            "odds": 3.33,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Braelon Allen Under 2.5 recepciones + Saquon Barkley Under 2.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.4261359710688073,
+            "odds": 2.862,
+            "won": 1.0,
+            "profit": 1.862,
+            "labels": "Emanuel Wilson Under 1.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.43939272867448026,
+            "odds": 2.4794,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Brandin Cooks Under 2.5 recepciones + Tyler Allgeier Under 2.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.4411539059182382,
+            "odds": 2.3712,
+            "won": 1.0,
+            "profit": 1.3712,
+            "labels": "Jerry Jeudy Over 1.5 recepciones + Jahan Dotson Under 2.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.4233465283112191,
+            "odds": 3.1494,
+            "won": 1.0,
+            "profit": 2.1494,
+            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.4320136593463051,
+            "odds": 2.688,
+            "won": 1.0,
+            "profit": 1.6880000000000002,
+            "labels": "Charlie Kolar Under 2.5 recepciones + Kyle Williams Under 1.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.4437621720537767,
+            "odds": 2.5584,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Saquon Barkley Under 2.5 recepciones + Tony Pollard Under 2.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.4415289667196726,
+            "odds": 2.4786,
+            "won": 1.0,
+            "profit": 1.4786000000000001,
+            "labels": "Austin Hooper Over 0.5 recepciones + Bhayshul Tuten Under 2.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.39430101646963833,
+            "odds": 3.5502000000000002,
+            "won": 1.0,
+            "profit": 2.5502000000000002,
+            "labels": "Ollie Gordon II Under 1.5 recepciones + Justin Jefferson Under 6.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.4126664181415292,
+            "odds": 2.9558999999999997,
+            "won": 1.0,
+            "profit": 1.9558999999999997,
+            "labels": "Darius Cooper Under 2.5 recepciones + Mack Hollins Over 2.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.3915206264750308,
+            "odds": 2.673,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Nico Collins Under 5.5 recepciones + Chase Brown Over 3.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.40176798174118356,
+            "odds": 2.5760000000000005,
+            "won": 1.0,
+            "profit": 1.5760000000000005,
+            "labels": "Woody Marks Under 2.5 recepciones + Ty Johnson Over 1.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.530349405541278,
+            "odds": 2.8049999999999997,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Devin Duvernay Under 1.5 recepciones + Ashton Dulin Under 1.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.5074382526816675,
+            "odds": 2.7552,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Konata Mumpfield Under 2.5 recepciones + Theo Johnson Over 0.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.5182570444873112,
+            "odds": 2.6052,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jordan Mason Under 1.5 recepciones + Laquon Treadwell Under 2.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.5134619635340276,
+            "odds": 2.3104,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Efton Chism III Over 0.5 recepciones + Jack Bech Over 0.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.511407083602092,
+            "odds": 2.7590000000000003,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Van Jefferson Over 0.5 recepciones + Keenan Allen Over 2.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.476819169119753,
+            "odds": 2.7840000000000003,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Ashton Dulin Under 1.5 recepciones + Jordan Watkins Over 0.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.44933005882885363,
+            "odds": 2.856,
+            "won": 1.0,
+            "profit": 1.8559999999999999,
+            "labels": "Justin Jefferson Under 7.5 recepciones + Trey McBride Over 5.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.45768005493524944,
+            "odds": 2.5564,
+            "won": 1.0,
+            "profit": 1.5564,
+            "labels": "Devin Duvernay Under 1.5 recepciones + Foster Moreau Over 0.5 recepciones"
+          }
+        ]
+      },
+      {
+        "patas": 3,
+        "n": 26,
+        "semanas": 9,
+        "ganadas": 8,
+        "prob_media_pct": 32.0,
+        "acierto_pct": 30.8,
+        "cuota_media": 4.28,
+        "roi_pct": 48.6,
+        "roi_ic90": [
+          -30.0,
+          129.6
+        ],
+        "roi_esperado_por_sencillas_pct": 37.5,
+        "detalle": [
+          {
+            "week": 3,
+            "p": 0.37985088703709724,
+            "odds": 4.41045,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Skyy Moore Under 1.5 recepciones + LaJohntay Wester Under 1.5 recepciones + Terrance Ferguson Under 4.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.34118361742979747,
+            "odds": 4.6255299999999995,
+            "won": 1.0,
+            "profit": 3.6255299999999995,
+            "labels": "Kenny Gainwell Over 1.5 recepciones + Jaylen Warren Under 4.5 recepciones + Jaylin Noel Under 2.5 recepciones"
+          },
+          {
+            "week": 3,
+            "p": 0.3287736274955856,
+            "odds": 4.094874000000001,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Chris Brooks Under 1.5 recepciones + Jordan Addison Under 3.5 recepciones + Rashod Bateman Under 3.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.35121429673615545,
+            "odds": 4.285050000000001,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Darius Cooper Under 2.5 recepciones + Kenny Gainwell Over 1.5 recepciones + Jordan Addison Under 4.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.3791055264158006,
+            "odds": 3.3480000000000003,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jaylen Wright Under 1.5 recepciones + Cody White Under 1.5 recepciones + Adam Trautman Over 0.5 recepciones"
+          },
+          {
+            "week": 4,
+            "p": 0.364729838616376,
+            "odds": 3.1505039999999997,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Ollie Gordon II Under 1.5 recepciones + Tory Horton Over 0.5 recepciones + Kendre Miller Under 1.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.30244228472678464,
+            "odds": 5.143266,
+            "won": 1.0,
+            "profit": 4.143266,
+            "labels": "Tre Harris Under 4.5 recepciones + Braelon Allen Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.305721878057714,
+            "odds": 4.5144,
+            "won": 1.0,
+            "profit": 3.5144,
+            "labels": "Kenny Gainwell Over 1.5 recepciones + Mason Taylor Over 1.5 recepciones + Darius Cooper Under 2.5 recepciones"
+          },
+          {
+            "week": 5,
+            "p": 0.35321062829643973,
+            "odds": 3.359232,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Kyle Williams Under 1.5 recepciones + Jacory Croskey-Merritt Under 1.5 recepciones + Roman Wilson Under 3.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.3029192327026835,
+            "odds": 4.3297740000000005,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Davis Allen Over 0.5 recepciones + Mason Taylor Over 1.5 recepciones + Xavier Worthy Under 4.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.30771333380851695,
+            "odds": 3.832984,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Brandin Cooks Under 2.5 recepciones + Charlie Kolar Under 2.5 recepciones + Jalen Nailor Under 2.5 recepciones"
+          },
+          {
+            "week": 6,
+            "p": 0.3062108491878492,
+            "odds": 3.34776,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Foster Moreau Over 0.5 recepciones + TreVeyon Henderson Under 1.5 recepciones + Roschon Johnson Under 1.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.27412463107117735,
+            "odds": 5.294700000000001,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Emanuel Wilson Under 1.5 recepciones + Braelon Allen Under 2.5 recepciones + Saquon Barkley Under 2.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.2811506713655984,
+            "odds": 4.46292,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Brandin Cooks Under 2.5 recepciones + Tyler Allgeier Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
+          },
+          {
+            "week": 7,
+            "p": 0.2936065177690271,
+            "odds": 3.5568000000000004,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jerry Jeudy Over 1.5 recepciones + Tommy Tremble Over 1.5 recepciones + Jahan Dotson Under 2.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.27301531818734914,
+            "odds": 5.290992,
+            "won": 1.0,
+            "profit": 4.290992,
+            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones + Kyle Williams Under 1.5 recepciones"
+          },
+          {
+            "week": 8,
+            "p": 0.29727387542272626,
+            "odds": 4.09344,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Saquon Barkley Under 2.5 recepciones + Charlie Kolar Under 2.5 recepciones + Tony Pollard Under 2.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.25383520003628185,
+            "odds": 6.283854,
+            "won": 1.0,
+            "profit": 5.283854,
+            "labels": "Darius Cooper Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones + Justin Jefferson Under 6.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.2509746314880204,
+            "odds": 4.463909999999999,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Mack Hollins Over 2.5 recepciones + Nico Collins Under 5.5 recepciones + Chase Brown Over 3.5 recepciones"
+          },
+          {
+            "week": 9,
+            "p": 0.26464023219452953,
+            "odds": 3.9155200000000003,
+            "won": 1.0,
+            "profit": 2.9155200000000003,
+            "labels": "Kyle Williams Under 1.5 recepciones + Woody Marks Under 2.5 recepciones + Ty Johnson Over 1.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.36774709909434034,
+            "odds": 4.7124,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Devin Duvernay Under 1.5 recepciones + Ashton Dulin Under 1.5 recepciones + Theo Johnson Over 0.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.3792636739705174,
+            "odds": 4.272527999999999,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Jordan Mason Under 1.5 recepciones + Konata Mumpfield Under 2.5 recepciones + Laquon Treadwell Under 2.5 recepciones"
+          },
+          {
+            "week": 10,
+            "p": 0.3828451185768517,
+            "odds": 3.326976,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Drew Sample Over 0.5 recepciones + Efton Chism III Over 0.5 recepciones + Jack Bech Over 0.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.3601216432232892,
+            "odds": 4.4144000000000005,
+            "won": 0.0,
+            "profit": -1.0,
+            "labels": "Van Jefferson Over 0.5 recepciones + Ashton Dulin Under 1.5 recepciones + Keenan Allen Over 2.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.3011420736089812,
+            "odds": 4.852512,
+            "won": 1.0,
+            "profit": 3.852512,
+            "labels": "Jordan Watkins Over 0.5 recepciones + Trey McBride Over 5.5 recepciones + Foster Moreau Over 0.5 recepciones"
+          },
+          {
+            "week": 11,
+            "p": 0.3163649867059303,
+            "odds": 4.005540000000001,
+            "won": 1.0,
+            "profit": 3.0055400000000008,
+            "labels": "Devin Duvernay Under 1.5 recepciones + Theo Johnson Over 0.5 recepciones + Justin Jefferson Under 7.5 recepciones"
+          }
+        ]
+      }
+    ],
+    "nota_combinadas": "Mismas combinadas que habría mostrado la app cada semana (patas sin repetir). IC90 = rango probable del ROI remuestreando semanas. El ROI esperado por sencillas es la estimación más estable (partidos distintos = independientes)."
+  },
   "calibracion": {
     "version": 1,
-    "fitted_at": "2026-11-23T23:59:08+00:00",
+    "fitted_at": "2026-11-25T20:28:01+00:00",
     "source": "backtest con cuotas históricas de The-Odds-API (1 h antes de cada jornada)",
     "weeks": [
       1,
@@ -872,21 +1555,21 @@
       10,
       11
     ],
-    "n_lines": 6924,
+    "n_lines": 7462,
     "families": {
       "h2h": {
         "a": 1.0,
         "b": 0.0,
         "c": 0.0,
-        "n": 161,
+        "n": 162,
         "model_weight": 0.0,
         "variant": "mercado"
       },
       "passing_yards": {
         "a": 0.9995,
         "b": 0.0,
-        "c": 0.0871,
-        "n": 233,
+        "c": 0.1145,
+        "n": 252,
         "model_weight": 0.0,
         "variant": "sesgo"
       },
@@ -894,23 +1577,23 @@
         "a": 1.0,
         "b": 0.0,
         "c": 0.0,
-        "n": 1460,
+        "n": 1578,
         "model_weight": 0.0,
         "variant": "mercado"
       },
       "receptions": {
-        "a": 0.568,
-        "b": 0.3915,
-        "c": 0.0378,
-        "n": 1433,
-        "model_weight": 0.408,
+        "a": 0.5616,
+        "b": 0.3964,
+        "c": 0.0286,
+        "n": 1547,
+        "model_weight": 0.414,
         "variant": "completo"
       },
       "rushing_yards": {
-        "a": 1.0141,
+        "a": 1.0098,
         "b": 0.0,
-        "c": -0.2004,
-        "n": 708,
+        "c": -0.1874,
+        "n": 768,
         "model_weight": 0.0,
         "variant": "sesgo"
       },
@@ -918,7 +1601,7 @@
         "a": 0.999,
         "b": 0.0,
         "c": 0.0,
-        "n": 155,
+        "n": 156,
         "model_weight": 0.0,
         "variant": "sesgo"
       },
@@ -926,15 +1609,15 @@
         "a": 1.0,
         "b": 0.0,
         "c": 0.0,
-        "n": 2614,
+        "n": 2838,
         "model_weight": 0.0,
         "variant": "mercado"
       },
       "totals": {
         "a": 1.0009,
         "b": 0.0,
-        "c": 0.0555,
-        "n": 160,
+        "c": 0.0498,
+        "n": 161,
         "model_weight": 0.0,
         "variant": "sesgo"
       }
@@ -945,690 +1628,116 @@
       "h2h",
       "passing_yards",
       "receiving_yards",
-      "receptions",
       "spreads",
       "total_tds",
       "totals"
     ],
     "validated_families": [
+      "receptions",
       "rushing_yards"
     ],
     "parlay": {
       "lift_weight": 0.5,
-      "validated_only": true,
-      "min_leg_ev": 2.0,
-      "disabled_tiers": []
-    }
-  },
-  "alta_probabilidad": {
-    "regla": {
+      "validated_only": false,
+      "min_leg_ev": 0.0,
+      "disabled_tiers": [
+        "ALTO"
+      ]
+    },
+    "high_prob": {
       "min_prob": 0.6,
       "min_ev": -2.0,
       "min_odds": 1.25,
       "max_legs": 3,
       "pool": 10,
-      "max_credible_ev": 25.0
-    },
-    "resumen": {
-      "n": 234,
-      "acierto_pct": 66.2,
-      "prob_media_pct": 64.6,
-      "unidades": 21.58,
-      "roi_pct": 9.2
-    },
-    "primera_mitad": {
-      "semanas": "< 6",
-      "n": 80,
-      "acierto_pct": 65.0,
-      "prob_media_pct": 65.0,
-      "unidades": 6.0,
-      "roi_pct": 7.5
-    },
-    "segunda_mitad": {
-      "semanas": ">= 6",
-      "n": 154,
-      "acierto_pct": 66.9,
-      "prob_media_pct": 64.3,
-      "unidades": 15.58,
-      "roi_pct": 10.1
-    },
-    "comprobada": true,
-    "por_familia": [
-      {
-        "familia": "receptions",
-        "n": 226,
-        "acierto_pct": 65.9,
-        "prob_media_pct": 64.6,
-        "unidades": 20.18,
-        "roi_pct": 8.9
-      },
-      {
-        "familia": "rushing_yards",
-        "n": 7,
-        "acierto_pct": 85.7,
-        "prob_media_pct": 64.5,
-        "unidades": 2.4,
-        "roi_pct": 34.3
-      },
-      {
-        "familia": "total_tds",
-        "n": 1,
-        "acierto_pct": 0.0,
-        "prob_media_pct": 65.0,
-        "unidades": -1.0,
-        "roi_pct": -100.0
-      }
-    ],
-    "por_semana": [
-      {
-        "semana": 3,
-        "n": 15,
-        "acierto_pct": 66.7,
-        "prob_media_pct": 65.1,
-        "unidades": 2.01,
-        "roi_pct": 13.4
-      },
-      {
-        "semana": 4,
-        "n": 39,
-        "acierto_pct": 64.1,
-        "prob_media_pct": 65.5,
-        "unidades": 1.88,
-        "roi_pct": 4.8
-      },
-      {
-        "semana": 5,
-        "n": 26,
-        "acierto_pct": 65.4,
-        "prob_media_pct": 64.3,
-        "unidades": 2.11,
-        "roi_pct": 8.1
-      },
-      {
-        "semana": 6,
-        "n": 28,
-        "acierto_pct": 71.4,
-        "prob_media_pct": 64.1,
-        "unidades": 4.39,
-        "roi_pct": 15.7
-      },
-      {
-        "semana": 7,
-        "n": 21,
-        "acierto_pct": 71.4,
-        "prob_media_pct": 63.6,
-        "unidades": 3.67,
-        "roi_pct": 17.5
-      },
-      {
-        "semana": 8,
-        "n": 24,
-        "acierto_pct": 83.3,
-        "prob_media_pct": 63.7,
-        "unidades": 9.02,
-        "roi_pct": 37.6
-      },
-      {
-        "semana": 9,
-        "n": 21,
-        "acierto_pct": 90.5,
-        "prob_media_pct": 62.3,
-        "unidades": 10.87,
-        "roi_pct": 51.8
-      },
-      {
-        "semana": 10,
-        "n": 34,
-        "acierto_pct": 41.2,
-        "prob_media_pct": 66.9,
-        "unidades": -11.56,
-        "roi_pct": -34.0
-      },
-      {
-        "semana": 11,
-        "n": 26,
-        "acierto_pct": 57.7,
-        "prob_media_pct": 64.0,
-        "unidades": -0.81,
-        "roi_pct": -3.1
-      }
-    ],
-    "sencillas_ic90": [
-      -3.6,
-      22.4
-    ],
-    "combinadas": [
-      {
-        "patas": 2,
-        "n": 36,
-        "semanas": 9,
-        "ganadas": 18,
-        "prob_media_pct": 45.7,
-        "acierto_pct": 50.0,
-        "cuota_media": 2.68,
-        "roi_pct": 37.4,
-        "roi_ic90": [
-          -5.6,
-          78.0
-        ],
-        "roi_esperado_por_sencillas_pct": 19.2,
-        "detalle": [
+      "comprobada": true,
+      "backtest": {
+        "resumen": {
+          "n": 268,
+          "acierto_pct": 67.5,
+          "prob_media_pct": 64.6,
+          "unidades": 29.91,
+          "roi_pct": 11.2
+        },
+        "primera_mitad": {
+          "semanas": "< 6",
+          "n": 102,
+          "acierto_pct": 67.6,
+          "prob_media_pct": 65.1,
+          "unidades": 11.71,
+          "roi_pct": 11.5
+        },
+        "segunda_mitad": {
+          "semanas": ">= 6",
+          "n": 166,
+          "acierto_pct": 67.5,
+          "prob_media_pct": 64.3,
+          "unidades": 18.2,
+          "roi_pct": 11.0
+        },
+        "por_familia": [
           {
-            "week": 3,
-            "p": 0.4653355574757266,
-            "odds": 3.1679999999999997,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Skyy Moore Under 1.5 recepciones + Bhayshul Tuten Under 1.5 recepciones"
+            "familia": "receptions",
+            "n": 259,
+            "acierto_pct": 67.6,
+            "prob_media_pct": 64.6,
+            "unidades": 29.51,
+            "roi_pct": 11.4
           },
           {
-            "week": 3,
-            "p": 0.4778457544590969,
-            "odds": 2.8729999999999998,
-            "won": 1.0,
-            "profit": 1.8729999999999998,
-            "labels": "Jaylen Warren Under 4.5 recepciones + Jaylin Noel Under 2.5 recepciones"
+            "familia": "rushing_yards",
+            "n": 8,
+            "acierto_pct": 75.0,
+            "prob_media_pct": 63.7,
+            "unidades": 1.4,
+            "roi_pct": 17.5
           },
           {
-            "week": 3,
-            "p": 0.4048767748911799,
-            "odds": 3.1476,
-            "won": 1.0,
-            "profit": 2.1476,
-            "labels": "Austin Hooper Over 0.5 recepciones + Oronde Gadsden II Under 3.5 recepciones"
-          },
-          {
-            "week": 3,
-            "p": 0.42009664087011933,
-            "odds": 2.9013999999999998,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Breece Hall Under 3.5 recepciones + Matthew Golden Under 4.5 recepciones"
-          },
-          {
-            "week": 4,
-            "p": 0.502879348168914,
-            "odds": 2.6950000000000003,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Darius Cooper Under 2.5 recepciones + Jordan Addison Under 4.5 recepciones"
-          },
-          {
-            "week": 4,
-            "p": 0.5361545805198359,
-            "odds": 2.2896,
-            "won": 1.0,
-            "profit": 1.2896,
-            "labels": "Jaylen Wright Under 1.5 recepciones + Kenny Gainwell Over 1.5 recepciones"
-          },
-          {
-            "week": 4,
-            "p": 0.5152723032787602,
-            "odds": 2.2800000000000002,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Cody White Under 1.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
-          },
-          {
-            "week": 4,
-            "p": 0.47622145692494977,
-            "odds": 2.2785,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Kendre Miller Under 1.5 recepciones + Adam Trautman Over 0.5 recepciones"
-          },
-          {
-            "week": 5,
-            "p": 0.457198115050898,
-            "odds": 2.9558999999999997,
-            "won": 1.0,
-            "profit": 1.9558999999999997,
-            "labels": "Tre Harris Under 4.5 recepciones + Braelon Allen Under 2.5 recepciones"
-          },
-          {
-            "week": 5,
-            "p": 0.4284515444789391,
-            "odds": 2.9754,
-            "won": 1.0,
-            "profit": 1.9754,
-            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
-          },
-          {
-            "week": 5,
-            "p": 0.46389447158198266,
-            "odds": 2.64,
-            "won": 1.0,
-            "profit": 1.6400000000000001,
-            "labels": "Kenny Gainwell Over 1.5 recepciones + Mason Taylor Over 1.5 recepciones"
-          },
-          {
-            "week": 5,
-            "p": 0.5361069139842615,
-            "odds": 2.0736,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Kyle Williams Under 1.5 recepciones + Jacory Croskey-Merritt Under 1.5 recepciones"
-          },
-          {
-            "week": 6,
-            "p": 0.4413768602975137,
-            "odds": 2.8674000000000004,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Mason Taylor Over 1.5 recepciones + Xavier Worthy Under 4.5 recepciones"
-          },
-          {
-            "week": 6,
-            "p": 0.4588242107153698,
-            "odds": 2.5217,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Davis Allen Over 0.5 recepciones + Charlie Kolar Under 2.5 recepciones"
-          },
-          {
-            "week": 6,
-            "p": 0.45242225900613664,
-            "odds": 2.2952,
-            "won": 1.0,
-            "profit": 1.2952,
-            "labels": "Brandin Cooks Under 2.5 recepciones + Jalen Nailor Under 2.5 recepciones"
-          },
-          {
-            "week": 6,
-            "p": 0.4557752669524544,
-            "odds": 2.262,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Foster Moreau Over 0.5 recepciones + Roschon Johnson Under 1.5 recepciones"
-          },
-          {
-            "week": 7,
-            "p": 0.4240019284766786,
-            "odds": 2.9415000000000004,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Emanuel Wilson Under 1.5 recepciones + Braelon Allen Under 2.5 recepciones"
-          },
-          {
-            "week": 7,
-            "p": 0.42770200914604883,
-            "odds": 2.7720000000000002,
-            "won": 1.0,
-            "profit": 1.7720000000000002,
-            "labels": "Brandin Cooks Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
-          },
-          {
-            "week": 7,
-            "p": 0.43835628103310303,
-            "odds": 2.4472,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Jerry Jeudy Over 1.5 recepciones + Tyler Allgeier Under 2.5 recepciones"
-          },
-          {
-            "week": 7,
-            "p": 0.4086248421455494,
-            "odds": 2.4648000000000003,
-            "won": 1.0,
-            "profit": 1.4648000000000003,
-            "labels": "Jahan Dotson Under 2.5 recepciones + Josh Cuevas Over 0.5 recepciones"
-          },
-          {
-            "week": 8,
-            "p": 0.417711244097405,
-            "odds": 3.1494,
-            "won": 1.0,
-            "profit": 2.1494,
-            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
-          },
-          {
-            "week": 8,
-            "p": 0.426985365112209,
-            "odds": 2.688,
-            "won": 1.0,
-            "profit": 1.6880000000000002,
-            "labels": "Charlie Kolar Under 2.5 recepciones + Kyle Williams Under 1.5 recepciones"
-          },
-          {
-            "week": 8,
-            "p": 0.4388355264527356,
-            "odds": 2.5584,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Saquon Barkley Under 2.5 recepciones + Tony Pollard Under 2.5 recepciones"
-          },
-          {
-            "week": 8,
-            "p": 0.4397201889188209,
-            "odds": 2.4786,
-            "won": 1.0,
-            "profit": 1.4786000000000001,
-            "labels": "Austin Hooper Over 0.5 recepciones + Bhayshul Tuten Under 2.5 recepciones"
-          },
-          {
-            "week": 9,
-            "p": 0.40072441662181696,
-            "odds": 3.4337999999999997,
-            "won": 1.0,
-            "profit": 2.4337999999999997,
-            "labels": "Darius Cooper Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
-          },
-          {
-            "week": 9,
-            "p": 0.3995277541502451,
-            "odds": 2.7554999999999996,
-            "won": 1.0,
-            "profit": 1.7554999999999996,
-            "labels": "Mack Hollins Over 2.5 recepciones + Nico Collins Under 5.5 recepciones"
-          },
-          {
-            "week": 9,
-            "p": 0.3980256347020721,
-            "odds": 2.6082000000000005,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Woody Marks Under 2.5 recepciones + Chase Brown Over 3.5 recepciones"
-          },
-          {
-            "week": 9,
-            "p": 0.41614253276922997,
-            "odds": 2.4320000000000004,
-            "won": 1.0,
-            "profit": 1.4320000000000004,
-            "labels": "Noah Fant Over 0.5 recepciones + Ty Johnson Over 1.5 recepciones"
-          },
-          {
-            "week": 10,
-            "p": 0.5275628719631681,
-            "odds": 2.8049999999999997,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Devin Duvernay Under 1.5 recepciones + Ashton Dulin Under 1.5 recepciones"
-          },
-          {
-            "week": 10,
-            "p": 0.5085402624905163,
-            "odds": 2.7552,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Konata Mumpfield Under 2.5 recepciones + Theo Johnson Over 0.5 recepciones"
-          },
-          {
-            "week": 10,
-            "p": 0.5155646737195855,
-            "odds": 2.6052,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Jordan Mason Under 1.5 recepciones + Laquon Treadwell Under 2.5 recepciones"
-          },
-          {
-            "week": 10,
-            "p": 0.5183581789181982,
-            "odds": 2.3104,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Efton Chism III Over 0.5 recepciones + Jack Bech Over 0.5 recepciones"
-          },
-          {
-            "week": 11,
-            "p": 0.4835854088761361,
-            "odds": 2.8480000000000003,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Ashton Dulin Under 1.5 recepciones + Keenan Allen Over 2.5 recepciones"
-          },
-          {
-            "week": 11,
-            "p": 0.4481032584000299,
-            "odds": 2.9232,
-            "won": 1.0,
-            "profit": 1.9232,
-            "labels": "Jordan Watkins Over 0.5 recepciones + Trey McBride Over 5.5 recepciones"
-          },
-          {
-            "week": 11,
-            "p": 0.4441598299170418,
-            "odds": 2.8219999999999996,
-            "won": 1.0,
-            "profit": 1.8219999999999996,
-            "labels": "Justin Jefferson Under 7.5 recepciones + Foster Moreau Over 0.5 recepciones"
-          },
-          {
-            "week": 11,
-            "p": 0.4651029537468922,
-            "odds": 2.3562000000000003,
-            "won": 1.0,
-            "profit": 1.3562000000000003,
-            "labels": "Theo Johnson Over 0.5 recepciones + Devin Duvernay Under 1.5 recepciones"
+            "familia": "total_tds",
+            "n": 1,
+            "acierto_pct": 0.0,
+            "prob_media_pct": 65.0,
+            "unidades": -1.0,
+            "roi_pct": -100.0
           }
-        ]
-      },
-      {
-        "patas": 3,
-        "n": 26,
-        "semanas": 9,
-        "ganadas": 7,
-        "prob_media_pct": 31.2,
-        "acierto_pct": 26.9,
-        "cuota_media": 4.28,
-        "roi_pct": 31.5,
-        "roi_ic90": [
-          -42.0,
-          104.3
         ],
-        "roi_esperado_por_sencillas_pct": 30.2,
-        "detalle": [
+        "sencillas_ic90": [
+          0.1,
+          22.2
+        ],
+        "combinadas": [
           {
-            "week": 3,
-            "p": 0.32343430932598344,
-            "odds": 5.35392,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Skyy Moore Under 1.5 recepciones + Jaylen Warren Under 4.5 recepciones + Bhayshul Tuten Under 1.5 recepciones"
+            "patas": 2,
+            "n": 36,
+            "semanas": 9,
+            "ganadas": 17,
+            "prob_media_pct": 46.5,
+            "acierto_pct": 47.2,
+            "cuota_media": 2.67,
+            "roi_pct": 29.7,
+            "roi_ic90": [
+              -11.5,
+              70.4
+            ],
+            "roi_esperado_por_sencillas_pct": 23.7
           },
           {
-            "week": 3,
-            "p": 0.2783496943801222,
-            "odds": 5.35092,
-            "won": 1.0,
-            "profit": 4.35092,
-            "labels": "Jaylin Noel Under 2.5 recepciones + Austin Hooper Over 0.5 recepciones + Oronde Gadsden II Under 3.5 recepciones"
-          },
-          {
-            "week": 3,
-            "p": 0.26823125928957187,
-            "odds": 4.64224,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Breece Hall Under 3.5 recepciones + Mack Hollins Over 2.5 recepciones + Matthew Golden Under 4.5 recepciones"
-          },
-          {
-            "week": 4,
-            "p": 0.34773499163604304,
-            "odds": 4.285050000000001,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Darius Cooper Under 2.5 recepciones + Kenny Gainwell Over 1.5 recepciones + Jordan Addison Under 4.5 recepciones"
-          },
-          {
-            "week": 4,
-            "p": 0.3763981407712979,
-            "odds": 3.3480000000000003,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Jaylen Wright Under 1.5 recepciones + Cody White Under 1.5 recepciones + Adam Trautman Over 0.5 recepciones"
-          },
-          {
-            "week": 4,
-            "p": 0.36227040684147965,
-            "odds": 3.1505039999999997,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Ollie Gordon II Under 1.5 recepciones + Tory Horton Over 0.5 recepciones + Kendre Miller Under 1.5 recepciones"
-          },
-          {
-            "week": 5,
-            "p": 0.2976716901437752,
-            "odds": 5.143266,
-            "won": 1.0,
-            "profit": 4.143266,
-            "labels": "Tre Harris Under 4.5 recepciones + Braelon Allen Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones"
-          },
-          {
-            "week": 5,
-            "p": 0.3052725872654378,
-            "odds": 4.5144,
-            "won": 1.0,
-            "profit": 3.5144,
-            "labels": "Kenny Gainwell Over 1.5 recepciones + Mason Taylor Over 1.5 recepciones + Darius Cooper Under 2.5 recepciones"
-          },
-          {
-            "week": 5,
-            "p": 0.3584504778455026,
-            "odds": 3.172608,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Kyle Williams Under 1.5 recepciones + Jacory Croskey-Merritt Under 1.5 recepciones + Calvin Ridley Over 0.5 recepciones"
-          },
-          {
-            "week": 6,
-            "p": 0.30203038880039795,
-            "odds": 4.3297740000000005,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Davis Allen Over 0.5 recepciones + Mason Taylor Over 1.5 recepciones + Xavier Worthy Under 4.5 recepciones"
-          },
-          {
-            "week": 6,
-            "p": 0.30335363923871633,
-            "odds": 3.832984,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Brandin Cooks Under 2.5 recepciones + Charlie Kolar Under 2.5 recepciones + Jalen Nailor Under 2.5 recepciones"
-          },
-          {
-            "week": 6,
-            "p": 0.36169987291110284,
-            "odds": 2.8275,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Jaxon Smith-Njigba Under 0.5 yds carrera + Foster Moreau Over 0.5 recepciones + Roschon Johnson Under 1.5 recepciones"
-          },
-          {
-            "week": 7,
-            "p": 0.28566173731093586,
-            "odds": 4.529910000000001,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Brandin Cooks Under 2.5 recepciones + Emanuel Wilson Under 1.5 recepciones + Braelon Allen Under 2.5 recepciones"
-          },
-          {
-            "week": 7,
-            "p": 0.2782814662165127,
-            "odds": 4.40496,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Jerry Jeudy Over 1.5 recepciones + Tyler Allgeier Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
-          },
-          {
-            "week": 7,
-            "p": 0.2724664720499324,
-            "odds": 3.6972,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Tommy Tremble Over 1.5 recepciones + Jahan Dotson Under 2.5 recepciones + Josh Cuevas Over 0.5 recepciones"
-          },
-          {
-            "week": 8,
-            "p": 0.2677504128610202,
-            "odds": 5.290992,
-            "won": 1.0,
-            "profit": 4.290992,
-            "labels": "Darius Cooper Under 2.5 recepciones + Justin Jefferson Under 6.5 recepciones + Kyle Williams Under 1.5 recepciones"
-          },
-          {
-            "week": 8,
-            "p": 0.29232151833765646,
-            "odds": 4.09344,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Saquon Barkley Under 2.5 recepciones + Charlie Kolar Under 2.5 recepciones + Tony Pollard Under 2.5 recepciones"
-          },
-          {
-            "week": 9,
-            "p": 0.2572910760235829,
-            "odds": 5.734445999999999,
-            "won": 1.0,
-            "profit": 4.734445999999999,
-            "labels": "Mack Hollins Over 2.5 recepciones + Darius Cooper Under 2.5 recepciones + Ollie Gordon II Under 1.5 recepciones"
-          },
-          {
-            "week": 9,
-            "p": 0.24593895076545666,
-            "odds": 4.276800000000001,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Ty Johnson Over 1.5 recepciones + Chase Brown Over 3.5 recepciones + Nico Collins Under 5.5 recepciones"
-          },
-          {
-            "week": 9,
-            "p": 0.27454425338451494,
-            "odds": 3.7197440000000004,
-            "won": 1.0,
-            "profit": 2.7197440000000004,
-            "labels": "Noah Fant Over 0.5 recepciones + Kyle Williams Under 1.5 recepciones + Woody Marks Under 2.5 recepciones"
-          },
-          {
-            "week": 10,
-            "p": 0.3675320752422318,
-            "odds": 4.7124,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Devin Duvernay Under 1.5 recepciones + Ashton Dulin Under 1.5 recepciones + Theo Johnson Over 0.5 recepciones"
-          },
-          {
-            "week": 10,
-            "p": 0.37634614508207637,
-            "odds": 4.272527999999999,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Jordan Mason Under 1.5 recepciones + Konata Mumpfield Under 2.5 recepciones + Laquon Treadwell Under 2.5 recepciones"
-          },
-          {
-            "week": 10,
-            "p": 0.38824838464169853,
-            "odds": 3.326976,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Drew Sample Over 0.5 recepciones + Efton Chism III Over 0.5 recepciones + Jack Bech Over 0.5 recepciones"
-          },
-          {
-            "week": 11,
-            "p": 0.3214043778240525,
-            "odds": 4.7846400000000004,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Ashton Dulin Under 1.5 recepciones + Keenan Allen Over 2.5 recepciones + Trey McBride Over 5.5 recepciones"
-          },
-          {
-            "week": 11,
-            "p": 0.30545872175441036,
-            "odds": 4.448136,
-            "won": 1.0,
-            "profit": 3.448136,
-            "labels": "Devin Duvernay Under 1.5 recepciones + Jordan Watkins Over 0.5 recepciones + Foster Moreau Over 0.5 recepciones"
-          },
-          {
-            "week": 11,
-            "p": 0.2971768711446367,
-            "odds": 4.00554,
-            "won": 0.0,
-            "profit": -1.0,
-            "labels": "Theo Johnson Over 0.5 recepciones + Justin Jefferson Under 7.5 recepciones + Jack Bech Under 2.5 recepciones"
+            "patas": 3,
+            "n": 26,
+            "semanas": 9,
+            "ganadas": 8,
+            "prob_media_pct": 32.0,
+            "acierto_pct": 30.8,
+            "cuota_media": 4.28,
+            "roi_pct": 48.6,
+            "roi_ic90": [
+              -30.0,
+              129.6
+            ],
+            "roi_esperado_por_sencillas_pct": 37.5
           }
         ]
       }
-    ],
-    "nota_combinadas": "Mismas combinadas que habría mostrado la app cada semana (patas sin repetir). IC90 = rango probable del ROI remuestreando semanas. El ROI esperado por sencillas es la estimación más estable (partidos distintos = independientes)."
+    }
   }
 }
