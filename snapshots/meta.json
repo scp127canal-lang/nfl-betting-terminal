@@ -10,5 +10,8 @@
   "game_odds_rows": 1194,
   "player_props_rows": 3439,
   "players": 33,
-  "credits_remaining": "19960"
+  "credits_remaining": "9622",
+  "closings_done": [
+    "2026-11-27 15:00"
+  ]
 }
